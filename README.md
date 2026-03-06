@@ -51,6 +51,12 @@ claude /plugin marketplace install closedloop
 git clone git@github.com:closedloop-ai/claude-plugins.git
 cd claude-plugins
 git config core.hooksPath .githooks
+
+# Bootstrap.
+claude /bootstrap:start
+
+# Plan. Code.
+claude /code:start --prd requirements.md
 ```
 
 ## Contributing
