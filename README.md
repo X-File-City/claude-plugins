@@ -1,4 +1,6 @@
 # claude-plugins
+<img width="832" height="365" alt="image" src="https://github.com/user-attachments/assets/6d5ccbb9-f85d-48a8-ba3f-d42a7a12ead7" />
+
 
 Open-source Claude Code plugins by [ClosedLoop](https://closedloop.ai) — extending Claude Code with planning, code review, quality judges, and self-learning capabilities.
 
