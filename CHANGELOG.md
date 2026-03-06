@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### code v1.0.3
+### code v1.0.4
 
 #### Changed
 - Generalized `prd-creator` skill description and replaced analytics discovery step with risks assessment
