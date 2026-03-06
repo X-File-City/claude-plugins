@@ -1,4 +1,4 @@
-# claude-plugins
+# ClosedLoop.AI Claude Plugins
 
 <div>
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License" />
@@ -7,8 +7,6 @@
 </div>
 
 <br/>
-
-**ClosedLoop.AI** — extending Claude Code with planning, code review, quality judges, and self-learning capabilities.
 
 **Bootstrap. Plan. Code. Ship.** It's that simple.
 
