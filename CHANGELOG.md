@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### code v1.0.6
+
+#### Changed
+- `has_code_changes` now outputs integer count of code files changed; code judges skip condition uses `changed_count -eq 0`
+
 ### code v1.0.5
 
 #### Changed
