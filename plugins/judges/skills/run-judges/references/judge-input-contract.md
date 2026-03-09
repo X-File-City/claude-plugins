@@ -18,6 +18,7 @@ All judge runs (plan/code) must construct this envelope before launching judge a
 | `task` | string | Natural-language objective judges must evaluate against |
 | `primary_artifact` | object | Primary evidence descriptor |
 | `supporting_artifacts` | array | Secondary evidence descriptors |
+| `source_of_truth` | array | Ordered artifact IDs defining evidence priority |
 | `fallback_mode` | object | Fallback metadata and artifact declarations |
 | `metadata` | object | Run metadata (`run_id`; optional fields like `generated_at`) |
 

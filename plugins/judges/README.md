@@ -81,6 +81,7 @@ At runtime, this contract guidance is injected from `common_input_preamble.md`, 
 | `task` | string | Natural-language objective judges must evaluate against |
 | `primary_artifact` | object | Authoritative evidence artifact descriptor |
 | `supporting_artifacts` | array | Secondary evidence artifact descriptors in priority order |
+| `source_of_truth` | array | Ordered artifact IDs defining evidence priority |
 | `fallback_mode` | object | Fallback activation + reason + mapped fallback artifacts |
 | `metadata` | object | Run metadata (`run_id` required; `generated_at` optional) |
 

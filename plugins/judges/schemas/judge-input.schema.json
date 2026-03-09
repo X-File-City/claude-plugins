@@ -9,6 +9,7 @@
     "task",
     "primary_artifact",
     "supporting_artifacts",
+    "source_of_truth",
     "fallback_mode",
     "metadata"
   ],
