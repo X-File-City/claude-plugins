@@ -33,6 +33,7 @@ Extract from investigation-log.md the project's actual conventions:
 - Naming conventions (snake_case, camelCase, PascalCase for files/classes/functions)
 - File organization (where tests live, how modules are structured, directory layout)
 - Code patterns (error handling style, type annotation approach, logging patterns, async patterns)
+- Design patterns (gang of 4)
 - Tooling (test framework, linter, dependency management)
 
 Then evaluate how well the plan's proposals align:
