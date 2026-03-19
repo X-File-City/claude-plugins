@@ -420,7 +420,7 @@ run_judges_if_needed() {
       CLOSEDLOOP_WORKDIR='$workdir' \
       CLOSEDLOOP_PARENT_STEP='$CLOSEDLOOP_JUDGES_STEP' \
       CLOSEDLOOP_PARENT_STEP_NAME='plan_judges' \
-      claude -p 'Activate judges:run-judges skill. CLOSEDLOOP_WORKDIR=$workdir. Use --artifact-type plan (default). Write judges.json to \$CLOSEDLOOP_WORKDIR.' \
+      claude -p 'Activate judges:run-judges skill. --workdir $workdir --artifact-type plan. Write judges.json to $workdir.' \
         --allowed-tools=Bash,Grep,Glob,Read,Write,Task,Skill,TodoWrite \
         --max-turns 150 2>&1 | tee -a '$PROGRESS_LOG'
     " || log_progress "Plan judges encountered errors (continuing)"
@@ -447,7 +447,7 @@ run_judges_if_needed() {
     CLOSEDLOOP_WORKDIR='$workdir' \
     CLOSEDLOOP_PARENT_STEP='$CLOSEDLOOP_JUDGES_STEP' \
     CLOSEDLOOP_PARENT_STEP_NAME='code_judges' \
-    claude -p 'Activate judges:run-judges skill. CLOSEDLOOP_WORKDIR=$workdir. Use --artifact-type code. Write code-judges.json to \$CLOSEDLOOP_WORKDIR.' \
+    claude -p 'Activate judges:run-judges skill. --workdir $workdir --artifact-type code. Write code-judges.json to $workdir.' \
       --allowed-tools=Bash,Grep,Glob,Read,Write,Task,Skill,TodoWrite \
       --max-turns 150 2>&1 | tee -a '$PROGRESS_LOG'
   " || log_progress "Code judges encountered errors (continuing)"

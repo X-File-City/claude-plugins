@@ -12,6 +12,12 @@ Execute specialized judge agents in parallel to evaluate implementation plan qua
 
 ## Parameters
 
+**--workdir**: Path to the working directory containing judge artifacts (optional)
+
+- Resolved in order: `--workdir` argument → `$CLOSEDLOOP_WORKDIR` environment variable → `.closedloop-ai/judges` (default, relative to current working directory)
+- The directory is created automatically if it does not exist
+- All output files (`judges.json`, `code-judges.json`, `prd-judges.json`, `judge-input.json`, `perf.jsonl`, etc.) are written to this resolved directory
+
 **--artifact-type**: Artifact category to evaluate (plan | code | prd), default: plan
 
 - **plan** (default): Evaluate implementation plan with 16 judges, 4 batches, output to judges.json
@@ -224,6 +230,28 @@ rm -f "$CLOSEDLOOP_WORKDIR/.closedloop/perf-substep-start.env"
 ---
 
 ## Execution Workflow
+
+### Working Directory Resolution
+
+**Before any other step**, resolve the working directory and export it as `CLOSEDLOOP_WORKDIR`:
+
+```bash
+# Resolve working directory (precedence: --workdir arg > env var > default)
+if [ -n "$ARG_WORKDIR" ]; then
+  WORKDIR="$ARG_WORKDIR"
+elif [ -n "$CLOSEDLOOP_WORKDIR" ]; then
+  WORKDIR="$CLOSEDLOOP_WORKDIR"
+else
+  WORKDIR="$(pwd)/.closedloop-ai/judges"
+fi
+
+mkdir -p "$WORKDIR"
+export CLOSEDLOOP_WORKDIR="$WORKDIR"
+```
+
+Where `$ARG_WORKDIR` is the value passed via `--workdir` in the invocation prompt. All subsequent references to `$CLOSEDLOOP_WORKDIR` use this resolved value.
+
+---
 
 ### Step 0: Mandatory Contract Pre-Read
 
