@@ -8,12 +8,12 @@ from pathlib import Path
 
 import pytest
 
-# From plugins/code-review/tools/python, go up to plugins/, then to judges/skills
-sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent.parent / "judges" / "skills" / "run-judges" / "scripts")
-)
+sys.path.insert(0, str(Path(__file__).parent))
 
-from validate_judge_report import JUDGE_REGISTRY, validate_report  # type: ignore[import-not-found]
+from validate_judge_report import (  # type: ignore[import-not-found]
+    JUDGE_REGISTRY,
+    validate_report,
+)
 
 
 def create_valid_casescore(case_id: str) -> dict:
@@ -638,7 +638,9 @@ class TestCategoryPrdValidation:
         report_path.write_text(json.dumps(report, indent=2))
 
         valid, message = validate_report(report_path, category="prd")
-        assert valid is True, f"Expected valid report with -prd-judges suffix, got: {message}"
+        assert valid is True, (
+            f"Expected valid report with -prd-judges suffix, got: {message}"
+        )
 
     def test_prd_rejects_wrong_suffix(self, tmp_path: Path) -> None:
         """PRD report with non -prd-judges suffix fails validation."""
@@ -662,7 +664,9 @@ class TestCategoryPrdValidation:
         report_path.write_text(json.dumps(report, indent=2))
 
         valid, message = validate_report(report_path, category="prd")
-        assert valid is False, "Expected rejection for plan suffix used with prd category"
+        assert valid is False, (
+            "Expected rejection for plan suffix used with prd category"
+        )
         assert "report_id should end with one of" in message
 
     def test_prd_rejects_code_suffix(self, tmp_path: Path) -> None:
@@ -674,7 +678,9 @@ class TestCategoryPrdValidation:
         report_path.write_text(json.dumps(report, indent=2))
 
         valid, message = validate_report(report_path, category="prd")
-        assert valid is False, "Expected rejection for code suffix used with prd category"
+        assert valid is False, (
+            "Expected rejection for code suffix used with prd category"
+        )
         assert "report_id should end with one of" in message
 
     def test_prd_rejects_missing_judges(self, tmp_path: Path) -> None:
@@ -735,18 +741,24 @@ class TestCategoryPrdValidation:
         report_path.write_text(json.dumps(report, indent=2))
 
         valid, message = validate_report(report_path, category="plan")
-        assert valid is False, "PRD judges should not satisfy plan category requirements"
+        assert valid is False, (
+            "PRD judges should not satisfy plan category requirements"
+        )
         assert "Missing expected judges" in message
 
     def test_default_filename_for_prd_category(self) -> None:
         """DEFAULT_FILENAMES produces 'prd-judges.json' for prd category."""
-        from validate_judge_report import DEFAULT_FILENAMES  # type: ignore[import-not-found]
+        from validate_judge_report import (
+            DEFAULT_FILENAMES,  # type: ignore[import-not-found]
+        )
 
         assert DEFAULT_FILENAMES["prd"] == "prd-judges.json"
 
     def test_valid_suffixes_for_prd_category(self) -> None:
         """VALID_SUFFIXES for prd contains only '-prd-judges'."""
-        from validate_judge_report import VALID_SUFFIXES  # type: ignore[import-not-found]
+        from validate_judge_report import (
+            VALID_SUFFIXES,  # type: ignore[import-not-found]
+        )
 
         assert VALID_SUFFIXES["prd"] == ["-prd-judges"]
 
