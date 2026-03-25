@@ -18,7 +18,7 @@ if [[ -f "$MANIFEST" ]]; then
   exit 0
 fi
 
-# Resolve agents dir relative to this script: scripts/ -> skill/ -> skills/ -> run-judges/ -> judges plugin root -> agents/
+# Resolve agents dir relative to this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 AGENTS_SRC="$PLUGIN_DIR/agents"
