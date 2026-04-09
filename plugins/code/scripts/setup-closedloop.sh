@@ -20,6 +20,63 @@ PROMPT_NAME_EXPLICIT=false
 POSITIONAL_ARGS=()
 ADD_DIRS=()
 
+array_contains() {
+    local needle="$1"
+    shift
+
+    local value
+    for value in "$@"; do
+        if [[ "$value" == "$needle" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+make_unique_repo_name() {
+    local base_name="$1"
+    local repo_path="$2"
+    shift 2
+    local used_names=("$@")
+
+    local path_without_root="${repo_path#/}"
+    local path_parts=()
+    local old_ifs="$IFS"
+    IFS='/'
+    read -r -a path_parts <<< "$path_without_root"
+    IFS="$old_ifs"
+
+    local last_index=$((${#path_parts[@]} - 1))
+    local suffix_end_index="$last_index"
+    local start_index="$last_index"
+    if [[ ${#path_parts[@]} -gt 0 ]] && [[ "${path_parts[$last_index]}" == "$base_name" ]]; then
+        start_index=$((last_index - 1))
+        suffix_end_index=$((last_index - 1))
+    fi
+
+    local candidate=""
+    local suffix=""
+    local counter=2
+    while [[ $start_index -ge 0 ]]; do
+        suffix="$(IFS='-'; echo "${path_parts[*]:$start_index:$((suffix_end_index - start_index + 1))}")"
+        candidate="$base_name-$suffix"
+        if ! array_contains "$candidate" "${used_names[@]}"; then
+            echo "$candidate"
+            return 0
+        fi
+        start_index=$((start_index - 1))
+    done
+
+    candidate="$base_name-$counter"
+    while array_contains "$candidate" "${used_names[@]}"; do
+        counter=$((counter + 1))
+        candidate="$base_name-$counter"
+    done
+
+    echo "$candidate"
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --prd)
@@ -66,14 +123,20 @@ done
 RESOLVED_ADD_DIRS=()
 ADD_DIR_NAMES=()
 for raw_dir in "${ADD_DIRS[@]}"; do
-    if ! abs_path="$(cd "$raw_dir" 2>/dev/null && pwd)"; then
+    if ! abs_path="$(cd "$raw_dir" 2>/dev/null && pwd -P)"; then
         echo "Error: --add-dir path does not exist or is not a directory: $raw_dir" >&2
         exit 1
+    fi
+    if array_contains "$abs_path" "${RESOLVED_ADD_DIRS[@]}"; then
+        continue
     fi
     identity_file="$abs_path/.closedloop-ai/.repo-identity.json"
     repo_name="$(jq -r '.name // empty' "$identity_file" 2>/dev/null || true)"
     if [[ -z "$repo_name" ]]; then
         repo_name="$(basename "$abs_path")"
+    fi
+    if array_contains "$repo_name" "${ADD_DIR_NAMES[@]}"; then
+        repo_name="$(make_unique_repo_name "$repo_name" "$abs_path" "${ADD_DIR_NAMES[@]}")"
     fi
     RESOLVED_ADD_DIRS+=("$abs_path")
     ADD_DIR_NAMES+=("$repo_name")

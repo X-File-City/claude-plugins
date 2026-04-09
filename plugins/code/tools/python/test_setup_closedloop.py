@@ -142,6 +142,15 @@ def _config_env(workdir: Path) -> str:
     return (workdir / ".closedloop" / "config.env").read_text()
 
 
+def _config_value(config: str, key: str) -> str:
+    """Extract a quoted config.env value by key."""
+    prefix = f"{key}="
+    for line in config.splitlines():
+        if line.startswith(prefix):
+            return line.split("=", 1)[1].strip('"')
+    pytest.fail(f"{key} not found in config")
+
+
 def test_add_dir_nonexistent_path_fails(tmp_workdir: Path) -> None:
     """Should exit non-zero when --add-dir path does not exist."""
     result = _run_setup_in_workdir(tmp_workdir, "--add-dir", "/nonexistent/path/does/not/exist")
@@ -207,6 +216,69 @@ def test_multiple_add_dirs_produces_pipe_joined_values(tmp_workdir: Path, tmp_pa
         line for line in config.splitlines() if line.startswith("CLOSEDLOOP_ADD_DIRS=")
     )
     assert "|" in add_dirs_line, f"Expected pipe separator in: {add_dirs_line!r}"
+
+
+def test_add_dir_ignores_duplicate_resolved_repo_path(
+    tmp_workdir: Path, extra_repo: Path
+) -> None:
+    """The same resolved repo path should only appear once in config.env."""
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--add-dir", str(extra_repo), "--add-dir", str(extra_repo)
+    )
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIRS") == str(extra_repo)
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES") == "extra-repo"
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == f"extra-repo={extra_repo}"
+
+
+def test_add_dir_makes_identity_name_collisions_unique(
+    tmp_workdir: Path, tmp_path: Path
+) -> None:
+    """Distinct repos with the same identity name should get different repo keys."""
+    repo_a = tmp_path / "repo-a"
+    repo_b = tmp_path / "repo-b"
+    repo_a.mkdir()
+    repo_b.mkdir()
+    (repo_a / ".closedloop-ai").mkdir()
+    (repo_b / ".closedloop-ai").mkdir()
+    (repo_a / ".closedloop-ai" / ".repo-identity.json").write_text('{"name": "service"}')
+    (repo_b / ".closedloop-ai" / ".repo-identity.json").write_text('{"name": "service"}')
+
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--add-dir", str(repo_a), "--add-dir", str(repo_b)
+    )
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    add_dir_names = _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES").split("|")
+    assert add_dir_names == ["service", "service-repo-b"]
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == (
+        f"service={repo_a}|service-repo-b={repo_b}"
+    )
+
+
+def test_add_dir_makes_basename_collisions_unique(
+    tmp_workdir: Path, tmp_path: Path
+) -> None:
+    """Distinct repos with the same basename should get different repo keys."""
+    repo_a = tmp_path / "group-a" / "service"
+    repo_b = tmp_path / "group-b" / "service"
+    repo_a.mkdir(parents=True)
+    repo_b.mkdir(parents=True)
+
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--add-dir", str(repo_a), "--add-dir", str(repo_b)
+    )
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    add_dir_names = _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES").split("|")
+    assert add_dir_names == ["service", "service-group-b"]
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == (
+        f"service={repo_a}|service-group-b={repo_b}"
+    )
 
 
 def test_add_dir_selects_multi_repo_overlay_automatically(tmp_workdir: Path, extra_repo: Path) -> None:
