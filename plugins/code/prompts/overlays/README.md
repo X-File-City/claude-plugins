@@ -5,17 +5,6 @@ SSOT orchestrator prompt) at runtime. This directory exists so variants of
 the base prompt do not require duplicating 500+ lines of identical
 orchestration text.
 
-## Why overlays exist
-
-Before overlays, `prompt.md` and `prompt-multi-repo.md` were 99% identical
-540-line files. The multi-repo variant added three small inserts (one
-sentence each to the `pre-explorer` and `plan-draft-writer` launch prompts
-and a NOTE block in Phase 1.4). Every edit to the base had to be mirrored
-by hand and every missed mirror was a production bug in the orchestrator.
-
-Overlays fix that by keeping `prompt.md` as the single source of truth and
-expressing each variant as a small trailing amendment file.
-
 ## How assembly works
 
 `plugins/code/scripts/setup-closedloop.sh` resolves `--prompt <name>` in
@@ -40,32 +29,6 @@ If your variant only **adds** instructions that can be framed as
 amendments to earlier phases, write an overlay. If you need to **change**
 or **remove** base content, do not use an overlay — have a conversation
 about forking or refactoring the base instead.
-
-## Authoring rules (enforced by review, not code)
-
-- **Append-only.** Overlays never restate or contradict base lines. State
-  the amendment positively.
-- **Name the phase(s) amended.** Each sub-section heading references the
-  phase it modifies so a reader of the assembled prompt can
-  cross-reference.
-- **Frame as authoritative amendments.** Use language like "take
-  precedence over the base instructions for those phases when their
-  trigger conditions are met" — LLMs honor late instructions better when
-  framed as explicit errata.
-- **One overlay per run.** Overlays do not reference or compose with
-  other overlays.
-- **Plain markdown only.** No frontmatter, no directives, no parsing.
-
-## Authoring workflow
-
-1. Draft `overlays/<name>.overlay.md`.
-2. Run `cat plugins/code/prompts/prompt.md plugins/code/prompts/overlays/<name>.overlay.md > /tmp/assembled.md`
-   and read the result end-to-end to verify the orchestrator will
-   understand the amendments in context.
-3. If replacing a hand-maintained variant, compare behaviorally: every
-   rule in the old variant must be present in the new assembled output.
-   Byte equality is not required.
-4. Delete the hand-maintained variant in the same commit.
 
 ## Runtime contract — multi-repo overlay
 
