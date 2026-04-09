@@ -59,6 +59,19 @@ Parse the JSON output to get:
 
 **Write the discovery result to `$CLOSEDLOOP_WORKDIR/.workspace-repos.json`** so other agents can access it.
 
+### Step 1.5: Local Repos (--add-dir)
+
+After running `discover-repos.sh`, check `CLOSEDLOOP_ADD_DIRS` from the environment. This variable contains colon-separated paths passed via `--add-dir` flags, representing local repositories that are already part of the current task plan.
+
+For each path in `CLOSEDLOOP_ADD_DIRS`:
+1. Normalize the path (resolve symlinks, trailing slashes)
+2. Find the matching entry in the `peers[]` array from the discovery output by comparing the `path` field
+3. If a match is found, mark that peer with `"local": true` in the entry written to `.cross-repo-needs.json`
+
+**Local repos must NOT generate cross-repo PRDs** — they already have tasks in the plan. When writing capabilities for a local peer, set `"local": true` and skip PRD generation for that peer in the downstream workflow.
+
+External repos (peers NOT found in `CLOSEDLOOP_ADD_DIRS`) continue through the existing PRD-generation workflow unchanged.
+
 ### Step 2: Handle No Peers Case
 
 If `peers` array is empty:
@@ -104,6 +117,7 @@ Write `$CLOSEDLOOP_WORKDIR/.cross-repo-needs.json`:
       "peerName": "astoria-service",
       "peerType": "backend",
       "peerPath": "/path/to/backend",
+      "local": false,
       "capabilities": [
         {
           "type": "endpoint",
@@ -114,6 +128,19 @@ Write `$CLOSEDLOOP_WORKDIR/.cross-repo-needs.json`:
           "type": "endpoint",
           "description": "GET /api/v1/users/{id}",
           "neededBy": ["T-3.1"]
+        }
+      ]
+    },
+    {
+      "peerName": "astoria-shared",
+      "peerType": "library",
+      "peerPath": "/path/to/shared",
+      "local": true,
+      "capabilities": [
+        {
+          "type": "module",
+          "description": "Shared auth utilities",
+          "neededBy": ["T-1.2"]
         }
       ]
     }

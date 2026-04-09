@@ -141,3 +141,155 @@ def test_ignores_legacy_pid_mapping(tmp_workdir: Path) -> None:
 
     assert result.returncode == 0
     assert not (tmp_workdir / ".closedloop-ai" / f"session-{session_id}.workdir").exists()
+
+
+# ---------------------------------------------------------------------------
+# --add-dir tests
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def extra_repo(tmp_path: Path) -> Path:
+    """Create a minimal extra repo directory for --add-dir tests."""
+    repo = tmp_path / "extra-repo"
+    repo.mkdir()
+    return repo
+
+
+def _config_env(workdir: Path) -> str:
+    """Return the contents of .closedloop/config.env written by the script."""
+    return (workdir / ".closedloop" / "config.env").read_text()
+
+
+def test_add_dir_valid_directory_succeeds(tmp_workdir: Path, extra_repo: Path) -> None:
+    """Should succeed when --add-dir points to an existing directory."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_add_dir_nonexistent_path_fails(tmp_workdir: Path) -> None:
+    """Should exit non-zero when --add-dir path does not exist."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", "/nonexistent/path/does/not/exist")
+
+    assert result.returncode != 0
+    assert "does not exist" in result.stderr or "not a directory" in result.stderr
+
+
+def test_add_dir_writes_closedloop_add_dirs_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
+    """config.env must contain CLOSEDLOOP_ADD_DIRS with the resolved absolute path."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert str(extra_repo) in config
+    assert "CLOSEDLOOP_ADD_DIRS=" in config
+
+
+def test_add_dir_writes_closedloop_add_dir_names_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
+    """config.env must contain CLOSEDLOOP_ADD_DIR_NAMES derived from directory basename."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert "CLOSEDLOOP_ADD_DIR_NAMES=" in config
+    # basename of extra_repo is "extra-repo"
+    assert "extra-repo" in config
+
+
+def test_add_dir_writes_closedloop_repo_map_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
+    """config.env must contain CLOSEDLOOP_REPO_MAP in name=path format."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert "CLOSEDLOOP_REPO_MAP=" in config
+    assert f"extra-repo={extra_repo}" in config
+
+
+def test_add_dir_uses_identity_file_name(tmp_workdir: Path, tmp_path: Path) -> None:
+    """Should use .closedloop-ai/.repo-identity.json name field when present."""
+    named_repo = tmp_path / "some-dir"
+    named_repo.mkdir()
+    (named_repo / ".closedloop-ai").mkdir()
+    (named_repo / ".closedloop-ai" / ".repo-identity.json").write_text(
+        '{"name": "my-custom-name", "type": "service"}'
+    )
+
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(named_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert "my-custom-name" in config
+
+
+def test_add_dir_falls_back_to_basename_when_no_identity(tmp_workdir: Path, tmp_path: Path) -> None:
+    """Should use basename when .repo-identity.json is absent."""
+    unnamed_repo = tmp_path / "unnamed-service"
+    unnamed_repo.mkdir()
+
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(unnamed_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert "unnamed-service" in config
+
+
+def test_multiple_add_dirs_produces_pipe_joined_values(tmp_workdir: Path, tmp_path: Path) -> None:
+    """Multiple --add-dir flags should produce pipe-separated values in config.env."""
+    repo_a = tmp_path / "repo-a"
+    repo_b = tmp_path / "repo-b"
+    repo_a.mkdir()
+    repo_b.mkdir()
+
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--add-dir", str(repo_a), "--add-dir", str(repo_b)
+    )
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    # Both paths should appear; they should be pipe-separated
+    assert str(repo_a) in config
+    assert str(repo_b) in config
+    # Find the CLOSEDLOOP_ADD_DIRS line and verify pipe separator
+    add_dirs_line = next(
+        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_ADD_DIRS=")
+    )
+    assert "|" in add_dirs_line, f"Expected pipe separator in: {add_dirs_line!r}"
+
+
+def test_add_dir_selects_prompt_multi_repo_automatically(tmp_workdir: Path, extra_repo: Path) -> None:
+    """When --add-dir is given without explicit --prompt, prompt-multi-repo should be used."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert "prompt-multi-repo" in config
+
+
+def test_explicit_prompt_overrides_add_dir_auto_selection(tmp_workdir: Path, extra_repo: Path) -> None:
+    """An explicit --prompt flag must override the auto-selected prompt-multi-repo."""
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--add-dir", str(extra_repo), "--prompt", "prompt"
+    )
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    # The explicit "prompt" should appear in the prompt file path, not "prompt-multi-repo"
+    prompt_line = next(
+        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
+    )
+    # Should end with /prompt.md, not /prompt-multi-repo.md
+    assert prompt_line.endswith('prompt.md"'), (
+        f"Expected prompt.md but got: {prompt_line!r}"
+    )
+
+
+def test_no_add_dir_config_env_has_empty_add_dirs(tmp_workdir: Path) -> None:
+    """When no --add-dir is given, config.env must contain empty CLOSEDLOOP_ADD_DIRS."""
+    result = _run_setup_in_workdir(tmp_workdir)
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert 'CLOSEDLOOP_ADD_DIRS=""' in config
+    assert 'CLOSEDLOOP_ADD_DIR_NAMES=""' in config
+    assert 'CLOSEDLOOP_REPO_MAP=""' in config

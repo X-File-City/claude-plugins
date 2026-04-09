@@ -508,12 +508,25 @@ PRD_FILE=""
 PROMPT_NAME=""
 MAX_ITERATIONS=50
 COMPLETION_PROMISE="COMPLETE"
+ADD_DIRS=()
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
       show_help
       exit 0
+      ;;
+    --add-dir)
+      if [[ -z "${2:-}" ]]; then
+        echo -e "${RED}Error: --add-dir requires a directory path${NC}" >&2
+        exit 1
+      fi
+      if [[ ! -d "$2" ]]; then
+        echo -e "${RED}Error: --add-dir path does not exist or is not a directory: $2${NC}" >&2
+        exit 1
+      fi
+      ADD_DIRS+=("$2")
+      shift 2
       ;;
     --prd)
       if [[ -z "${2:-}" ]]; then
@@ -664,6 +677,15 @@ emit_skipped_step() {
   )"
 }
 
+# Export CLOSEDLOOP_ADD_DIRS as pipe-joined string from ADD_DIRS array
+export_add_dirs() {
+  if [[ ${#ADD_DIRS[@]} -gt 0 ]]; then
+    export CLOSEDLOOP_ADD_DIRS="$(IFS='|'; echo "${ADD_DIRS[*]}")"
+  else
+    export CLOSEDLOOP_ADD_DIRS=""
+  fi
+}
+
 # Update iteration in state file
 update_iteration() {
   local new_iter="$1"
@@ -688,6 +710,9 @@ create_state_file() {
   if [[ -n "$PRD_FILE" ]]; then
     prompt="$prompt --prd $PRD_FILE"
   fi
+  for add_dir in "${ADD_DIRS[@]+"${ADD_DIRS[@]}"}"; do
+    prompt="$prompt --add-dir \"$add_dir\""
+  done
 
   cat > "$STATE_FILE" <<EOF
 ---
@@ -697,6 +722,7 @@ max_iterations: $MAX_ITERATIONS
 completion_promise: "$COMPLETION_PROMISE"
 workdir: "$WORKDIR"
 prd_file: "$PRD_FILE"
+add_dirs: "${CLOSEDLOOP_ADD_DIRS:-}"
 run_id: "$RUN_ID"
 start_sha: "$START_SHA"
 self_learning: "$SELF_LEARNING"
@@ -747,6 +773,8 @@ main() {
     # Acquire lock to prevent concurrent loops
     acquire_lock "$WORKDIR"
 
+    export_add_dirs
+
     create_state_file
   fi
 
@@ -773,6 +801,15 @@ main() {
     START_SHA=$(get_field "start_sha")
     SELF_LEARNING=$(get_field "self_learning")
     export CLOSEDLOOP_SELF_LEARNING="$SELF_LEARNING"
+
+    # Reconstruct ADD_DIRS from the state file's add_dirs field
+    local add_dirs_field
+    add_dirs_field=$(get_field "add_dirs")
+    ADD_DIRS=()
+    if [[ -n "$add_dirs_field" ]]; then
+      IFS='|' read -ra ADD_DIRS <<< "$add_dirs_field"
+    fi
+    export_add_dirs
 
     # If resuming, re-acquire lock
     if [[ -n "$workdir" ]]; then

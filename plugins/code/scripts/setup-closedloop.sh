@@ -16,7 +16,9 @@ PRD_FILE=""
 PLAN_FILE=""
 MAX_ITERATIONS=10
 PROMPT_NAME=""
+PROMPT_NAME_EXPLICIT=false
 POSITIONAL_ARGS=()
+ADD_DIRS=()
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -38,6 +40,11 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             PROMPT_NAME="$2"
+            PROMPT_NAME_EXPLICIT=true
+            shift 2
+            ;;
+        --add-dir)
+            ADD_DIRS+=("$2")
             shift 2
             ;;
         -*)
@@ -51,13 +58,29 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Post-loop: resolve and validate each ADD_DIRS entry
+RESOLVED_ADD_DIRS=()
+ADD_DIR_NAMES=()
+for raw_dir in "${ADD_DIRS[@]}"; do
+    if ! abs_path="$(cd "$raw_dir" 2>/dev/null && pwd)"; then
+        echo "Error: --add-dir path does not exist or is not a directory: $raw_dir" >&2
+        exit 1
+    fi
+    identity_file="$abs_path/.closedloop-ai/.repo-identity.json"
+    repo_name="$(jq -r '.name // empty' "$identity_file" 2>/dev/null || true)"
+    if [[ -z "$repo_name" ]]; then
+        repo_name="$(basename "$abs_path")"
+    fi
+    RESOLVED_ADD_DIRS+=("$abs_path")
+    ADD_DIR_NAMES+=("$repo_name")
+done
+
 # First positional arg is workdir
 WORKDIR=""
 if [[ ${#POSITIONAL_ARGS[@]} -gt 0 ]]; then
     WORKDIR="${POSITIONAL_ARGS[0]}"
 fi
 
-PROMPT_NAME="${PROMPT_NAME:-prompt}"
 WORKDIR="${WORKDIR:-.}"
 # Convert to absolute path for consistent hook injection
 if [[ ! "$WORKDIR" = /* ]]; then
@@ -126,7 +149,16 @@ else
     echo "$(date): WARNING: Could not find session_id in process tree" >> "$DEBUG_LOG"
 fi
 
-# Step 3: Validate prompt before creating any directories
+# Step 3: Auto-select prompt based on whether extra repos were provided
+if [[ "$PROMPT_NAME_EXPLICIT" == false ]]; then
+    if [[ ${#RESOLVED_ADD_DIRS[@]} -gt 0 ]]; then
+        PROMPT_NAME="prompt-multi-repo"
+    else
+        PROMPT_NAME="${PROMPT_NAME:-prompt}"
+    fi
+fi
+
+# Validate prompt before creating any directories
 # Validate prompt name contains no path separators
 if [[ "$PROMPT_NAME" == */* || "$PROMPT_NAME" == *..* || "$PROMPT_NAME" =~ [[:space:]] ]]; then
     echo "ERROR: prompt name must not contain path separators or spaces" >&2
@@ -157,6 +189,25 @@ CLOSEDLOOP_PLAN_FILE="$PLAN_FILE"
 CLOSEDLOOP_MAX_ITERATIONS="$MAX_ITERATIONS"
 CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
 CLOSEDLOOP_PROMPT_FILE="$CLOSEDLOOP_PROMPT_FILE"
+EOF
+
+# Build pipe-joined multi-repo variables (empty strings when no extra repos)
+add_dirs_joined=""
+add_dir_names_joined=""
+repo_map_joined=""
+if [[ ${#RESOLVED_ADD_DIRS[@]} -gt 0 ]]; then
+    add_dirs_joined="$(IFS='|'; echo "${RESOLVED_ADD_DIRS[*]}")"
+    add_dir_names_joined="$(IFS='|'; echo "${ADD_DIR_NAMES[*]}")"
+    repo_map_parts=()
+    for i in "${!RESOLVED_ADD_DIRS[@]}"; do
+        repo_map_parts+=("${ADD_DIR_NAMES[$i]}=${RESOLVED_ADD_DIRS[$i]}")
+    done
+    repo_map_joined="$(IFS='|'; echo "${repo_map_parts[*]}")"
+fi
+cat >> "$WORKDIR/.closedloop/config.env" << EOF
+CLOSEDLOOP_ADD_DIRS="$add_dirs_joined"
+CLOSEDLOOP_ADD_DIR_NAMES="$add_dir_names_joined"
+CLOSEDLOOP_REPO_MAP="$repo_map_joined"
 EOF
 
 echo "ClosedLoop config written to $WORKDIR/.closedloop/config.env"

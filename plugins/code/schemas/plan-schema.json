@@ -132,6 +132,29 @@
         }
       }
     },
+    "repositories": {
+      "type": "object",
+      "description": "Map of repositories involved in this plan (only present for multi-repo plans). Keys are repo short names; values describe each repo.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute filesystem path to the repository root"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["primary", "secondary"],
+            "description": "Whether this is the primary or a secondary repository"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "True only for the primary repository"
+          }
+        }
+      }
+    },
     "amendments": {
       "type": "array",
       "description": "History of plan amendments applied via amend-plan command",
