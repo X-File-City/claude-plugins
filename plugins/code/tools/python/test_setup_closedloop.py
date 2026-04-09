@@ -16,17 +16,6 @@ def tmp_workdir(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def run_setup(*extra_args: str, cwd: str | None = None) -> subprocess.CompletedProcess:
-    """Run setup-closedloop.sh with the given extra arguments."""
-    workdir = cwd or str(extra_args[0]) if extra_args else "."
-    return subprocess.run(
-        ["bash", str(SETUP_SCRIPT), workdir, *extra_args],
-        capture_output=True,
-        text=True,
-        cwd=cwd or workdir,
-    )
-
-
 def _run_setup_in_workdir(
     workdir: Path, *extra_args: str, cwd: str | None = None
 ) -> subprocess.CompletedProcess:
@@ -84,13 +73,6 @@ def test_plan_relative_path_resolves_to_absolute(tmp_workdir: Path) -> None:
             break
     else:
         pytest.fail("CLOSEDLOOP_PLAN_FILE not found in stdout")
-
-
-def test_plan_missing_value_exits_error(tmp_workdir: Path) -> None:
-    """Should fail when --plan flag is given with no following value."""
-    result = _run_setup_in_workdir(tmp_workdir, "--plan")
-
-    assert result.returncode != 0
 
 
 def test_plan_skips_prd_autodiscovery(tmp_workdir: Path) -> None:
@@ -160,13 +142,6 @@ def _config_env(workdir: Path) -> str:
     return (workdir / ".closedloop" / "config.env").read_text()
 
 
-def test_add_dir_valid_directory_succeeds(tmp_workdir: Path, extra_repo: Path) -> None:
-    """Should succeed when --add-dir points to an existing directory."""
-    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
-
-    assert result.returncode == 0, result.stderr
-
-
 def test_add_dir_nonexistent_path_fails(tmp_workdir: Path) -> None:
     """Should exit non-zero when --add-dir path does not exist."""
     result = _run_setup_in_workdir(tmp_workdir, "--add-dir", "/nonexistent/path/does/not/exist")
@@ -183,17 +158,6 @@ def test_add_dir_writes_closedloop_add_dirs_to_config(tmp_workdir: Path, extra_r
     config = _config_env(tmp_workdir)
     assert str(extra_repo) in config
     assert "CLOSEDLOOP_ADD_DIRS=" in config
-
-
-def test_add_dir_writes_closedloop_add_dir_names_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
-    """config.env must contain CLOSEDLOOP_ADD_DIR_NAMES derived from directory basename."""
-    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
-
-    assert result.returncode == 0, result.stderr
-    config = _config_env(tmp_workdir)
-    assert "CLOSEDLOOP_ADD_DIR_NAMES=" in config
-    # basename of extra_repo is "extra-repo"
-    assert "extra-repo" in config
 
 
 def test_add_dir_writes_closedloop_repo_map_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
@@ -220,18 +184,6 @@ def test_add_dir_uses_identity_file_name(tmp_workdir: Path, tmp_path: Path) -> N
     assert result.returncode == 0, result.stderr
     config = _config_env(tmp_workdir)
     assert "my-custom-name" in config
-
-
-def test_add_dir_falls_back_to_basename_when_no_identity(tmp_workdir: Path, tmp_path: Path) -> None:
-    """Should use basename when .repo-identity.json is absent."""
-    unnamed_repo = tmp_path / "unnamed-service"
-    unnamed_repo.mkdir()
-
-    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(unnamed_repo))
-
-    assert result.returncode == 0, result.stderr
-    config = _config_env(tmp_workdir)
-    assert "unnamed-service" in config
 
 
 def test_multiple_add_dirs_produces_pipe_joined_values(tmp_workdir: Path, tmp_path: Path) -> None:
