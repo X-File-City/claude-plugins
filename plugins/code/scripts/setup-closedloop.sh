@@ -152,35 +152,55 @@ fi
 # Step 3: Auto-select prompt based on whether extra repos were provided
 if [[ "$PROMPT_NAME_EXPLICIT" == false ]]; then
     if [[ ${#RESOLVED_ADD_DIRS[@]} -gt 0 ]]; then
-        PROMPT_NAME="prompt-multi-repo"
+        PROMPT_NAME="multi-repo"
     else
         PROMPT_NAME="${PROMPT_NAME:-prompt}"
     fi
 fi
 
-# Validate prompt before creating any directories
 # Validate prompt name contains no path separators
 if [[ "$PROMPT_NAME" == */* || "$PROMPT_NAME" == *..* || "$PROMPT_NAME" =~ [[:space:]] ]]; then
     echo "ERROR: prompt name must not contain path separators or spaces" >&2
     exit 1
 fi
 
-CLOSEDLOOP_PROMPT_FILE="$PLUGIN_ROOT/prompts/$PROMPT_NAME.md"
+# Resolve prompt: direct base file takes precedence; otherwise assemble
+# base prompt.md + overlay. See plugins/code/prompts/overlays/README.md.
+DIRECT_PROMPT="$PLUGIN_ROOT/prompts/$PROMPT_NAME.md"
+OVERLAY_PROMPT="$PLUGIN_ROOT/prompts/overlays/$PROMPT_NAME.overlay.md"
+BASE_PROMPT="$PLUGIN_ROOT/prompts/prompt.md"
 
-# Validate the prompt file exists
-if [[ ! -f "$CLOSEDLOOP_PROMPT_FILE" ]]; then
-    echo "ERROR: Prompt file not found: $CLOSEDLOOP_PROMPT_FILE" >&2
+# Ensure WORKDIR/.closedloop exists before writing the assembled file
+mkdir -p "$WORKDIR/.closedloop"
+
+if [[ -f "$DIRECT_PROMPT" ]]; then
+    CLOSEDLOOP_PROMPT_FILE="$DIRECT_PROMPT"
+elif [[ -f "$OVERLAY_PROMPT" ]]; then
+    if [[ ! -f "$BASE_PROMPT" ]]; then
+        echo "ERROR: base prompt missing: $BASE_PROMPT" >&2
+        exit 1
+    fi
+    ASSEMBLED_PROMPT="$WORKDIR/.closedloop/prompt-assembled.md"
+    {
+        cat "$BASE_PROMPT"
+        printf '\n\n'
+        cat "$OVERLAY_PROMPT"
+    } > "$ASSEMBLED_PROMPT"
+    CLOSEDLOOP_PROMPT_FILE="$ASSEMBLED_PROMPT"
+else
+    echo "ERROR: Prompt '$PROMPT_NAME' not found (no $DIRECT_PROMPT, no $OVERLAY_PROMPT)" >&2
     echo "Available prompts:" >&2
     shopt -s nullglob
     for f in "$PLUGIN_ROOT/prompts/"*.md; do
         basename "$f" .md >&2
     done
+    for f in "$PLUGIN_ROOT/prompts/overlays/"*.overlay.md; do
+        name="$(basename "$f" .overlay.md)"
+        echo "$name (overlay)" >&2
+    done
     shopt -u nullglob
     exit 1
 fi
-
-# Write full config to WORKDIR
-mkdir -p "$WORKDIR/.closedloop"
 
 cat > "$WORKDIR/.closedloop/config.env" << EOF
 CLOSEDLOOP_WORKDIR="$WORKDIR"

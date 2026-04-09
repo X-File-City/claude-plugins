@@ -257,30 +257,48 @@ def test_multiple_add_dirs_produces_pipe_joined_values(tmp_workdir: Path, tmp_pa
     assert "|" in add_dirs_line, f"Expected pipe separator in: {add_dirs_line!r}"
 
 
-def test_add_dir_selects_prompt_multi_repo_automatically(tmp_workdir: Path, extra_repo: Path) -> None:
-    """When --add-dir is given without explicit --prompt, prompt-multi-repo should be used."""
+def test_add_dir_selects_multi_repo_overlay_automatically(tmp_workdir: Path, extra_repo: Path) -> None:
+    """When --add-dir is given without explicit --prompt, the multi-repo overlay
+    should be assembled onto prompt.md and used as the prompt file."""
     result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
 
     assert result.returncode == 0, result.stderr
     config = _config_env(tmp_workdir)
-    assert "prompt-multi-repo" in config
+    prompt_line = next(
+        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
+    )
+    # Should point at an assembled file under the workdir
+    assert "prompt-assembled.md" in prompt_line, (
+        f"Expected assembled prompt file, got: {prompt_line!r}"
+    )
+
+    # Verify the assembled file exists and equals base + blank + overlay
+    assembled_path = tmp_workdir / ".closedloop" / "prompt-assembled.md"
+    assert assembled_path.is_file(), f"Missing assembled file: {assembled_path}"
+    assembled = assembled_path.read_text()
+
+    plugin_root = Path(__file__).resolve().parents[2]
+    base = (plugin_root / "prompts" / "prompt.md").read_text()
+    overlay = (plugin_root / "prompts" / "overlays" / "multi-repo.overlay.md").read_text()
+    assert assembled == base + "\n\n" + overlay, (
+        "Assembled prompt does not match base + blank + overlay"
+    )
 
 
 def test_explicit_prompt_overrides_add_dir_auto_selection(tmp_workdir: Path, extra_repo: Path) -> None:
-    """An explicit --prompt flag must override the auto-selected prompt-multi-repo."""
+    """An explicit --prompt flag must override the auto-selected multi-repo overlay."""
     result = _run_setup_in_workdir(
         tmp_workdir, "--add-dir", str(extra_repo), "--prompt", "prompt"
     )
 
     assert result.returncode == 0, result.stderr
     config = _config_env(tmp_workdir)
-    # The explicit "prompt" should appear in the prompt file path, not "prompt-multi-repo"
     prompt_line = next(
         line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
     )
-    # Should end with /prompt.md, not /prompt-multi-repo.md
-    assert prompt_line.endswith('prompt.md"'), (
-        f"Expected prompt.md but got: {prompt_line!r}"
+    # Explicit --prompt prompt → direct base file, not assembled
+    assert prompt_line.endswith('prompts/prompt.md"'), (
+        f"Expected direct base prompt.md but got: {prompt_line!r}"
     )
 
 
