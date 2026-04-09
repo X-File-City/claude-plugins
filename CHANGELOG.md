@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `pre-explorer` agent produces per-repo code maps (`code-map-{name}.json`) when secondary repos are supplied
 - `plan-draft-writer` agent emits multi-repo plans with a `## Repositories` table and `@{repo}:path` task prefixes
 - New `multi-repo.overlay.md` overlay assembled onto `prompt.md` at runtime for cross-repository planning workflows
-- `repo` field added to task schema in `plan-schema.json` for multi-repo plan traceability
+- `repositories` map field added to the plan root schema in `plan-schema.json` for multi-repo plan traceability, keyed by repo short-name with `path` and `isPrimary` metadata
 - Tier 0 explicit-directory discovery and dedup helpers in `discover-repos.sh`, with structured JSON output
 - Enhancements to `cross-repo-coordinator` and `cross-repo-prd-writer` agents for multi-repo context
 - Tests for `discover-repos.sh` and `setup-closedloop.sh` (`test_discover_repos.py`, `test_setup_closedloop.py`) plus new multi-repo cases in `test_validate_plan.py`
