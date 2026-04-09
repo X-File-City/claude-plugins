@@ -143,11 +143,6 @@
             "type": "string",
             "description": "Absolute filesystem path to the repository root"
           },
-          "type": {
-            "type": "string",
-            "enum": ["primary", "secondary"],
-            "description": "Whether this is the primary or a secondary repository"
-          },
           "isPrimary": {
             "type": "boolean",
             "description": "True only for the primary repository"

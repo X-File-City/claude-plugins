@@ -251,17 +251,14 @@ Add an optional `repositories` field to plan.json as an object map keyed by repo
   "repositories": {
     "primary": {
       "path": "/absolute/path/to/primary/repo",
-      "type": "primary",
       "isPrimary": true
     },
     "frontend": {
       "path": "/workspace/ui",
-      "type": "secondary",
       "isPrimary": false
     },
     "backend": {
       "path": "/workspace/api",
-      "type": "secondary",
       "isPrimary": false
     }
   }
@@ -270,7 +267,6 @@ Add an optional `repositories` field to plan.json as an object map keyed by repo
 
 Fields per entry:
 - `path`: Absolute filesystem path to the repository root
-- `type`: `"primary"` for the main repo, `"secondary"` for additional repos
 - `isPrimary`: `true` only for the primary repo
 
 ## Process

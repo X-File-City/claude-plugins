@@ -1,4 +1,6 @@
 """Tests for validate_plan.py."""
+import pytest
+
 from validate_plan import validate_schema_fields
 
 
@@ -15,17 +17,35 @@ def _minimal_plan() -> dict:
     }
 
 
-def test_validate_schema_fields_accepts_unknown_repositories_key() -> None:
-    """validate_schema_fields must silently accept an unknown top-level key.
+@pytest.mark.parametrize(
+    ("scenario", "repositories"),
+    [
+        (
+            "single_secondary_entry",
+            {"secondary": {"path": "/foo", "isPrimary": False}},
+        ),
+        (
+            "primary_and_secondary_entries",
+            {
+                "primary": {"path": "/abs/primary", "isPrimary": True},
+                "frontend": {"path": "/abs/frontend", "isPrimary": False},
+            },
+        ),
+    ],
+)
+def test_validate_schema_accepts_canonical_repositories(
+    scenario: str, repositories: dict
+) -> None:
+    """validate_schema_fields must accept the canonical multi-repo shape.
 
-    Regression test: a plan dict that contains all required fields PLUS an
-    additional 'repositories' key (e.g. added by tooling) should not produce
-    any issues, confirming that validate_schema_fields only checks for
-    REQUIRED_FIELDS membership and does not reject unknown keys.
+    Each 'repositories' entry carries only `path` and `isPrimary` — the two
+    fields the schema defines after the `type` field was removed. Both a
+    single-entry shape and a multi-entry primary+secondary shape must
+    validate without producing any issues.
     """
     plan = _minimal_plan()
-    plan["repositories"] = {"secondary": {"path": "/foo", "isPrimary": False}}
+    plan["repositories"] = repositories
 
     issues = validate_schema_fields(plan)
 
-    assert issues == [], f"Expected no issues but got: {issues}"
+    assert issues == [], f"[{scenario}] expected no issues but got: {issues}"
