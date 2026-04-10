@@ -471,6 +471,7 @@ run_post_loop_review() {
   local formatter="$SCRIPTS_DIR/../tools/python/stream_formatter.py"
   local max_cycles="${POST_LOOP_REVIEW_CYCLES:-2}"
   local cycle=1
+  local consecutive_failures=0
 
   while [[ "$cycle" -le "$max_cycles" ]]; do
     echo -e "\n${BLUE}Review cycle $cycle of $max_cycles${NC}"
@@ -596,9 +597,15 @@ run_post_loop_review() {
     rm -f "$fix_output" "$fix_stderr"
 
     if [[ "$fix_exit" -ne 0 ]]; then
-      echo -e "${RED}Warning: Fix subprocess failed (exit $fix_exit). Skipping remaining cycles.${NC}"
-      log_progress "Post-loop fix failed (exit $fix_exit). Aborting."
-      return 0
+      echo -e "${YELLOW}Warning: Fix subprocess failed (exit $fix_exit). Retrying on next cycle.${NC}"
+      consecutive_failures=$((consecutive_failures + 1))
+      if [[ "$consecutive_failures" -ge 2 ]]; then
+        echo -e "${RED}Fix failed $consecutive_failures consecutive times. Skipping remaining cycles.${NC}"
+        log_progress "Post-loop fix failed $consecutive_failures consecutive times. Aborting."
+        return 0
+      fi
+    else
+      consecutive_failures=0
     fi
 
     log_progress "Post-loop fix cycle $cycle completed (exit: $fix_exit)"
