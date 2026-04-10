@@ -233,6 +233,23 @@ def test_add_dir_ignores_duplicate_resolved_repo_path(
     assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == f"extra-repo={extra_repo}"
 
 
+def test_add_dir_ignores_primary_workdir_path(tmp_workdir: Path) -> None:
+    """The primary workdir must never be re-published as a secondary repo."""
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", ".", cwd=str(tmp_workdir))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIRS") == ""
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES") == ""
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == ""
+    prompt_line = next(
+        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
+    )
+    assert "prompt-assembled.md" not in prompt_line, (
+        "Primary workdir in --add-dir should not trigger multi-repo prompt selection"
+    )
+
+
 def test_add_dir_makes_identity_name_collisions_unique(
     tmp_workdir: Path, tmp_path: Path
 ) -> None:
@@ -278,6 +295,25 @@ def test_add_dir_makes_basename_collisions_unique(
     assert add_dir_names == ["service", "service-group-b"]
     assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == (
         f"service={repo_a}|service-group-b={repo_b}"
+    )
+
+
+def test_add_dir_makes_name_collision_with_primary_repo_unique(
+    tmp_workdir: Path, tmp_path: Path
+) -> None:
+    """A secondary repo key must not collide with the primary repo identifier."""
+    primary_name = tmp_workdir.name
+    repo_with_same_name = tmp_path / "secondary-parent" / primary_name
+    repo_with_same_name.mkdir(parents=True)
+
+    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(repo_with_same_name))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(tmp_workdir)
+    add_dir_names = _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES").split("|")
+    assert add_dir_names == [f"{primary_name}-secondary-parent"]
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == (
+        f"{primary_name}-secondary-parent={repo_with_same_name}"
     )
 
 

@@ -77,6 +77,17 @@ make_unique_repo_name() {
     echo "$candidate"
 }
 
+resolve_directory_path() {
+    local raw_dir="$1"
+    local resolved_path=""
+
+    if ! resolved_path="$(cd "$raw_dir" 2>/dev/null && pwd -P)"; then
+        return 1
+    fi
+
+    echo "$resolved_path"
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --prd)
@@ -119,13 +130,33 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# First positional arg is workdir
+WORKDIR=""
+if [[ ${#POSITIONAL_ARGS[@]} -gt 0 ]]; then
+    WORKDIR="${POSITIONAL_ARGS[0]}"
+fi
+
+WORKDIR="${WORKDIR:-.}"
+# Resolve to a canonical absolute path so primary-vs-secondary comparisons are reliable.
+if ! WORKDIR="$(resolve_directory_path "$WORKDIR")"; then
+    echo "Error: workdir path does not exist or is not a directory: ${POSITIONAL_ARGS[0]:-.}" >&2
+    exit 1
+fi
+
+PRIMARY_REPO_NAME="$(basename "$WORKDIR")"
+PRIMARY_REPO_NAME="${PRIMARY_REPO_NAME:-primary}"
+
 # Post-loop: resolve and validate each ADD_DIRS entry
 RESOLVED_ADD_DIRS=()
 ADD_DIR_NAMES=()
+USED_REPO_NAMES=("$PRIMARY_REPO_NAME")
 for raw_dir in "${ADD_DIRS[@]}"; do
-    if ! abs_path="$(cd "$raw_dir" 2>/dev/null && pwd -P)"; then
+    if ! abs_path="$(resolve_directory_path "$raw_dir")"; then
         echo "Error: --add-dir path does not exist or is not a directory: $raw_dir" >&2
         exit 1
+    fi
+    if [[ "$abs_path" == "$WORKDIR" ]]; then
+        continue
     fi
     if array_contains "$abs_path" "${RESOLVED_ADD_DIRS[@]}"; then
         continue
@@ -135,24 +166,14 @@ for raw_dir in "${ADD_DIRS[@]}"; do
     if [[ -z "$repo_name" ]]; then
         repo_name="$(basename "$abs_path")"
     fi
-    if array_contains "$repo_name" "${ADD_DIR_NAMES[@]}"; then
-        repo_name="$(make_unique_repo_name "$repo_name" "$abs_path" "${ADD_DIR_NAMES[@]}")"
+    if array_contains "$repo_name" "${USED_REPO_NAMES[@]}"; then
+        repo_name="$(make_unique_repo_name "$repo_name" "$abs_path" "${USED_REPO_NAMES[@]}")"
     fi
     RESOLVED_ADD_DIRS+=("$abs_path")
     ADD_DIR_NAMES+=("$repo_name")
+    USED_REPO_NAMES+=("$repo_name")
 done
 
-# First positional arg is workdir
-WORKDIR=""
-if [[ ${#POSITIONAL_ARGS[@]} -gt 0 ]]; then
-    WORKDIR="${POSITIONAL_ARGS[0]}"
-fi
-
-WORKDIR="${WORKDIR:-.}"
-# Convert to absolute path for consistent hook injection
-if [[ ! "$WORKDIR" = /* ]]; then
-    WORKDIR="$PWD/$WORKDIR"
-fi
 if [[ -z "$PLAN_FILE" ]] && [[ -z "$PRD_FILE" ]]; then
     # Try common patterns in order of preference
     for pattern in "prd.md" "prd.pdf" "requirements.md" "requirements.txt" "ticket.md"; do
