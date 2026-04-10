@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 SETUP_SCRIPT = Path(__file__).parent.parent.parent / "scripts" / "setup-closedloop.sh"
+CLOSEDLOOP_STATE_DIR = ".closedloop-ai"
 
 
 @pytest.fixture
@@ -101,7 +102,7 @@ def test_plan_skips_prd_autodiscovery(tmp_workdir: Path) -> None:
 
 def test_writes_session_mapping_from_closedloop_pid_file(tmp_workdir: Path) -> None:
     """Should create a workdir mapping when a `.closedloop-ai` PID mapping exists."""
-    session_dir = tmp_workdir / ".closedloop-ai"
+    session_dir = tmp_workdir / CLOSEDLOOP_STATE_DIR
     session_dir.mkdir(parents=True)
     session_id = "session-from-closedloop"
     (session_dir / f"pid-{os.getpid()}.session").write_text(session_id)
@@ -122,7 +123,7 @@ def test_ignores_legacy_pid_mapping(tmp_workdir: Path) -> None:
     result = _run_setup_in_workdir(tmp_workdir)
 
     assert result.returncode == 0
-    assert not (tmp_workdir / ".closedloop-ai" / f"session-{session_id}.workdir").exists()
+    assert not (tmp_workdir / CLOSEDLOOP_STATE_DIR / f"session-{session_id}.workdir").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +140,7 @@ def extra_repo(tmp_path: Path) -> Path:
 
 def _config_env(workdir: Path) -> str:
     """Return the contents of .closedloop-ai/config.env written by the script."""
-    return (workdir / ".closedloop-ai" / "config.env").read_text()
+    return (workdir / CLOSEDLOOP_STATE_DIR / "config.env").read_text()
 
 
 def _config_value(config: str, key: str) -> str:
@@ -183,8 +184,8 @@ def test_add_dir_uses_identity_file_name(tmp_workdir: Path, tmp_path: Path) -> N
     """Should use .closedloop-ai/.repo-identity.json name field when present."""
     named_repo = tmp_path / "some-dir"
     named_repo.mkdir()
-    (named_repo / ".closedloop-ai").mkdir()
-    (named_repo / ".closedloop-ai" / ".repo-identity.json").write_text(
+    (named_repo / CLOSEDLOOP_STATE_DIR).mkdir()
+    (named_repo / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text(
         '{"name": "my-custom-name", "type": "service"}'
     )
 
@@ -258,10 +259,10 @@ def test_add_dir_makes_identity_name_collisions_unique(
     repo_b = tmp_path / "repo-b"
     repo_a.mkdir()
     repo_b.mkdir()
-    (repo_a / ".closedloop-ai").mkdir()
-    (repo_b / ".closedloop-ai").mkdir()
-    (repo_a / ".closedloop-ai" / ".repo-identity.json").write_text('{"name": "service"}')
-    (repo_b / ".closedloop-ai" / ".repo-identity.json").write_text('{"name": "service"}')
+    (repo_a / CLOSEDLOOP_STATE_DIR).mkdir()
+    (repo_b / CLOSEDLOOP_STATE_DIR).mkdir()
+    (repo_a / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text('{"name": "service"}')
+    (repo_b / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text('{"name": "service"}')
 
     result = _run_setup_in_workdir(
         tmp_workdir, "--add-dir", str(repo_a), "--add-dir", str(repo_b)
@@ -333,7 +334,7 @@ def test_add_dir_selects_multi_repo_overlay_automatically(tmp_workdir: Path, ext
     )
 
     # Verify the assembled file exists and equals base + blank + overlay
-    assembled_path = tmp_workdir / ".closedloop" / "prompt-assembled.md"
+    assembled_path = tmp_workdir / CLOSEDLOOP_STATE_DIR / "prompt-assembled.md"
     assert assembled_path.is_file(), f"Missing assembled file: {assembled_path}"
     assembled = assembled_path.read_text()
 

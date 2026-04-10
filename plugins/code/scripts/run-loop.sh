@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# Single source of truth for the state directory name
+CLOSEDLOOP_STATE_DIR=".closedloop-ai"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -15,8 +18,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # State file location
-STATE_FILE=".closedloop-ai/closedloop-loop.local.md"
-PROGRESS_LOG=".closedloop-ai/closedloop-progress.log"
+STATE_FILE="$CLOSEDLOOP_STATE_DIR/closedloop-loop.local.md"
+PROGRESS_LOG="$CLOSEDLOOP_STATE_DIR/closedloop-progress.log"
 
 # Learning system paths
 LOCK_FILE=".learnings/.lock"
@@ -122,9 +125,9 @@ bootstrap_learnings() {
     local org_learnings_dir=""
     local workdir_state_dir="$(dirname "$workdir")"
     # Check project root first, then the workdir-adjacent .closedloop-ai state directory.
-    if [[ -d ".closedloop-ai/learnings" ]]; then
-      org_learnings_dir=".closedloop-ai/learnings"
-    elif [[ "$(basename "$workdir_state_dir")" == ".closedloop-ai" ]] && [[ -d "$workdir_state_dir/learnings" ]]; then
+    if [[ -d "$CLOSEDLOOP_STATE_DIR/learnings" ]]; then
+      org_learnings_dir="$CLOSEDLOOP_STATE_DIR/learnings"
+    elif [[ "$(basename "$workdir_state_dir")" == "$CLOSEDLOOP_STATE_DIR" ]] && [[ -d "$workdir_state_dir/learnings" ]]; then
       org_learnings_dir="$workdir_state_dir/learnings"
     fi
 
@@ -460,7 +463,7 @@ DESCRIPTION:
   Runs Claude in a loop with fresh context on each iteration. Each iteration
   invokes `claude -p "/code:code <workdir>"`.
 
-  State is persisted to .closedloop-ai/closedloop-loop.local.md so loops can be resumed.
+  State is persisted to $CLOSEDLOOP_STATE_DIR/closedloop-loop.local.md so loops can be resumed.
 
   To signal completion, Claude must output: <promise>COMPLETE</promise>
 
@@ -492,10 +495,10 @@ STOPPING:
 
 MONITORING:
   # View current iteration:
-  grep '^iteration:' .closedloop-ai/closedloop-loop.local.md
+  grep '^iteration:' $CLOSEDLOOP_STATE_DIR/closedloop-loop.local.md
 
   # View progress log:
-  tail -20 .closedloop-ai/closedloop-progress.log
+  tail -20 $CLOSEDLOOP_STATE_DIR/closedloop-progress.log
 
   # View learning system status:
   ls -la .learnings/sessions/
@@ -696,7 +699,7 @@ update_iteration() {
 
 # Create state file
 create_state_file() {
-  mkdir -p .closedloop-ai
+  mkdir -p "$CLOSEDLOOP_STATE_DIR"
 
   # WORKDIR is the closedloop work directory passed by the caller
   # (e.g., /path/to/worktree/.closedloop-ai/work)
@@ -732,8 +735,8 @@ $prompt
 EOF
 
   # Update config.env with self-learning flag (preserve other keys)
-  mkdir -p "$WORKDIR/.closedloop-ai"
-  CONFIG_FILE="$WORKDIR/.closedloop-ai/config.env"
+  mkdir -p "$WORKDIR/$CLOSEDLOOP_STATE_DIR"
+  CONFIG_FILE="$WORKDIR/$CLOSEDLOOP_STATE_DIR/config.env"
   TMP_FILE="${CONFIG_FILE}.tmp.$$"
   if [[ -f "$CONFIG_FILE" ]]; then
     sed '/^CLOSEDLOOP_SELF_LEARNING=/d' "$CONFIG_FILE" > "$TMP_FILE"

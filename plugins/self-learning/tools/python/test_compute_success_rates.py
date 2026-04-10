@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+CLOSEDLOOP_STATE_DIR = ".closedloop-ai"
+
 from compute_success_rates import (
     compute_rates,
     jaccard_similarity,
@@ -576,5 +578,5 @@ def test_main_ignores_legacy_home_toon(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0
-    expected = home_dir / ".closedloop-ai" / "learnings" / "org-patterns.toon"
+    expected = home_dir / CLOSEDLOOP_STATE_DIR / "learnings" / "org-patterns.toon"
     assert f"No TOON file found at {expected}" in result.stderr

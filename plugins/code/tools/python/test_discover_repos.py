@@ -10,6 +10,7 @@ import pytest
 SCRIPT_PATH = (
     Path(__file__).resolve().parent.parent.parent / "scripts" / "discover-repos.sh"
 )
+CLOSEDLOOP_STATE_DIR = ".closedloop-ai"
 
 
 def run_discover(
@@ -47,15 +48,15 @@ def test_sibling_scan_uses_closedloop_repo_identity(tmp_path: Path) -> None:
     parent = tmp_path / "workspace"
     current = parent / "current-repo"
     current.mkdir(parents=True)
-    (current / ".closedloop-ai").mkdir()
-    (current / ".closedloop-ai" / ".repo-identity.json").write_text(
+    (current / CLOSEDLOOP_STATE_DIR).mkdir()
+    (current / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text(
         '{"name":"current","type":"service"}'
     )
 
     sibling = parent / "peer-repo"
     sibling.mkdir()
-    (sibling / ".closedloop-ai").mkdir()
-    (sibling / ".closedloop-ai" / ".repo-identity.json").write_text(
+    (sibling / CLOSEDLOOP_STATE_DIR).mkdir()
+    (sibling / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text(
         '{"name":"peer","type":"library","discoverable":true}'
     )
 
@@ -86,8 +87,8 @@ def _make_repo(parent: Path, name: str, identity: dict | None = None) -> Path:
     repo = parent / name
     repo.mkdir(parents=True, exist_ok=True)
     if identity is not None:
-        (repo / ".closedloop-ai").mkdir(exist_ok=True)
-        (repo / ".closedloop-ai" / ".repo-identity.json").write_text(
+        (repo / CLOSEDLOOP_STATE_DIR).mkdir(exist_ok=True)
+        (repo / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text(
             json.dumps(identity)
         )
     return repo

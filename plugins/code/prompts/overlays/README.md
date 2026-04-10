@@ -13,7 +13,7 @@ this order:
 1. If `prompts/<name>.md` exists, use it directly (backward compatible).
 2. Else if `prompts/overlays/<name>.overlay.md` exists, assemble
    `prompts/prompt.md` + blank line + overlay into
-   `$CLOSEDLOOP_WORKDIR/.closedloop/prompt-assembled.md` and point
+   `$CLOSEDLOOP_WORKDIR/.closedloop-ai/prompt-assembled.md` and point
    `CLOSEDLOOP_PROMPT_FILE` at that file.
 3. Else, fail loud with "prompt not found".
 
@@ -51,7 +51,7 @@ does not pass `--prompt` explicitly.
 ## Debugging
 
 - Inspect the assembled file at
-  `$CLOSEDLOOP_WORKDIR/.closedloop/prompt-assembled.md` after a run
+  `$CLOSEDLOOP_WORKDIR/.closedloop-ai/prompt-assembled.md` after a run
   starts.
 - To bypass the overlay, pass `--prompt prompt` — the base is used
   unchanged.

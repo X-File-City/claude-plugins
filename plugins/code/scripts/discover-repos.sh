@@ -4,11 +4,15 @@
 # Output: JSON to stdout
 
 set -e
+
+# Single source of truth for the state directory name
+CLOSEDLOOP_STATE_DIR=".closedloop-ai"
+
 PROJECT_ROOT="${1:-$PWD}"
 PROJECT_ROOT=$(cd "$PROJECT_ROOT" && pwd)
 
 # Read current repo's identity
-CURRENT_IDENTITY="$PROJECT_ROOT/.closedloop-ai/.repo-identity.json"
+CURRENT_IDENTITY="$PROJECT_ROOT/$CLOSEDLOOP_STATE_DIR/.repo-identity.json"
 if [[ -f "$CURRENT_IDENTITY" ]]; then
     CURRENT_NAME=$(jq -r '.name // "unknown"' "$CURRENT_IDENTITY")
     CURRENT_TYPE=$(jq -r '.type // "unknown"' "$CURRENT_IDENTITY")
@@ -51,7 +55,7 @@ if [[ -n "${CLOSEDLOOP_ADD_DIRS:-}" ]]; then
         _mark_seen "$path"
 
         # Read identity if exists, fall back to basename
-        identity_file="$path/.closedloop-ai/.repo-identity.json"
+        identity_file="$path/$CLOSEDLOOP_STATE_DIR/.repo-identity.json"
         repo_name=""
         repo_type="unknown"
         if [[ -f "$identity_file" ]]; then
@@ -86,7 +90,7 @@ if [[ -n "$CLAUDE_WORKSPACE_REPOS" ]]; then
         _mark_seen "$path"
 
         # Read identity if exists
-        identity_file="$path/.closedloop-ai/.repo-identity.json"
+        identity_file="$path/$CLOSEDLOOP_STATE_DIR/.repo-identity.json"
         type="unknown"
         repo_name=""
         if [[ -f "$identity_file" ]]; then
@@ -108,7 +112,7 @@ if [[ -z "$CLAUDE_WORKSPACE_REPOS" ]]; then
         [[ "$sibling" == "$PROJECT_ROOT" ]] && continue
         [[ ! -d "$sibling" ]] && continue
 
-        identity_file="$sibling/.closedloop-ai/.repo-identity.json"
+        identity_file="$sibling/$CLOSEDLOOP_STATE_DIR/.repo-identity.json"
         if [[ -f "$identity_file" ]]; then
             name=$(jq -r '.name // "unknown"' "$identity_file")
             type=$(jq -r '.type // "unknown"' "$identity_file")

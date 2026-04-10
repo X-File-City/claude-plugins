@@ -4,6 +4,9 @@
 
 set -e
 
+# Single source of truth for the state directory name
+CLOSEDLOOP_STATE_DIR=".closedloop-ai"
+
 DEBUG_LOG="/tmp/setup-closedloop-debug.log"
 echo "$(date): Setup started, PID=$$, PPID=$PPID, args: $*" >> "$DEBUG_LOG"
 
@@ -161,7 +164,7 @@ for raw_dir in "${ADD_DIRS[@]}"; do
     if array_contains "$abs_path" "${RESOLVED_ADD_DIRS[@]}"; then
         continue
     fi
-    identity_file="$abs_path/.closedloop-ai/.repo-identity.json"
+    identity_file="$abs_path/$CLOSEDLOOP_STATE_DIR/.repo-identity.json"
     repo_name="$(jq -r '.name // empty' "$identity_file" 2>/dev/null || true)"
     if [[ -z "$repo_name" ]]; then
         repo_name="$(basename "$abs_path")"
@@ -210,12 +213,12 @@ if [[ -n "$PLAN_FILE" ]]; then
 fi
 
 # Step 1: Find session_id by walking up process tree
-# SessionStart hook wrote to .closedloop-ai/pid-<Claude Code PID>.session
+# SessionStart hook wrote to $CLOSEDLOOP_STATE_DIR/pid-<Claude Code PID>.session
 # Claude Code's PID is an ancestor of this process
 SESSION_ID=""
 CURRENT_PID=$$
 while [[ $CURRENT_PID -gt 1 ]]; do
-    SESSION_FILE=".closedloop-ai/pid-$CURRENT_PID.session"
+    SESSION_FILE="$CLOSEDLOOP_STATE_DIR/pid-$CURRENT_PID.session"
     echo "$(date): Checking $SESSION_FILE" >> "$DEBUG_LOG"
     if [[ -f "$SESSION_FILE" ]]; then
         SESSION_ID=$(cat "$SESSION_FILE")
@@ -231,8 +234,8 @@ done
 
 if [[ -n "$SESSION_ID" ]]; then
     # Step 2: Write workdir mapping so hooks can find it via session_id
-    echo "$WORKDIR" > ".closedloop-ai/session-$SESSION_ID.workdir"
-    echo "$(date): Wrote workdir mapping: .closedloop-ai/session-$SESSION_ID.workdir -> $WORKDIR" >> "$DEBUG_LOG"
+    echo "$WORKDIR" > "$CLOSEDLOOP_STATE_DIR/session-$SESSION_ID.workdir"
+    echo "$(date): Wrote workdir mapping: $CLOSEDLOOP_STATE_DIR/session-$SESSION_ID.workdir -> $WORKDIR" >> "$DEBUG_LOG"
 else
     echo "$(date): WARNING: Could not find session_id in process tree" >> "$DEBUG_LOG"
 fi
@@ -258,8 +261,8 @@ DIRECT_PROMPT="$PLUGIN_ROOT/prompts/$PROMPT_NAME.md"
 OVERLAY_PROMPT="$PLUGIN_ROOT/prompts/overlays/$PROMPT_NAME.overlay.md"
 BASE_PROMPT="$PLUGIN_ROOT/prompts/prompt.md"
 
-# Ensure WORKDIR/.closedloop exists before writing the assembled file
-mkdir -p "$WORKDIR/.closedloop"
+# Ensure WORKDIR/$CLOSEDLOOP_STATE_DIR exists before writing the assembled file
+mkdir -p "$WORKDIR/$CLOSEDLOOP_STATE_DIR"
 
 if [[ -f "$DIRECT_PROMPT" ]]; then
     CLOSEDLOOP_PROMPT_FILE="$DIRECT_PROMPT"
@@ -268,7 +271,7 @@ elif [[ -f "$OVERLAY_PROMPT" ]]; then
         echo "ERROR: base prompt missing: $BASE_PROMPT" >&2
         exit 1
     fi
-    ASSEMBLED_PROMPT="$WORKDIR/.closedloop/prompt-assembled.md"
+    ASSEMBLED_PROMPT="$WORKDIR/$CLOSEDLOOP_STATE_DIR/prompt-assembled.md"
     {
         cat "$BASE_PROMPT"
         printf '\n\n'
@@ -291,9 +294,9 @@ else
 fi
 
 # Write full config to WORKDIR
-mkdir -p "$WORKDIR/.closedloop-ai"
+mkdir -p "$WORKDIR/$CLOSEDLOOP_STATE_DIR"
 
-cat > "$WORKDIR/.closedloop-ai/config.env" << EOF
+cat > "$WORKDIR/$CLOSEDLOOP_STATE_DIR/config.env" << EOF
 CLOSEDLOOP_WORKDIR="$WORKDIR"
 CLOSEDLOOP_PRD_FILE="$PRD_FILE"
 CLOSEDLOOP_PLAN_FILE="$PLAN_FILE"
@@ -315,11 +318,11 @@ if [[ ${#RESOLVED_ADD_DIRS[@]} -gt 0 ]]; then
     done
     repo_map_joined="$(IFS='|'; echo "${repo_map_parts[*]}")"
 fi
-cat >> "$WORKDIR/.closedloop-ai/config.env" << EOF
+cat >> "$WORKDIR/$CLOSEDLOOP_STATE_DIR/config.env" << EOF
 CLOSEDLOOP_ADD_DIRS="$add_dirs_joined"
 CLOSEDLOOP_ADD_DIR_NAMES="$add_dir_names_joined"
 CLOSEDLOOP_REPO_MAP="$repo_map_joined"
 EOF
 
-echo "ClosedLoop config written to $WORKDIR/.closedloop-ai/config.env"
-cat "$WORKDIR/.closedloop-ai/config.env"
+echo "ClosedLoop config written to $WORKDIR/$CLOSEDLOOP_STATE_DIR/config.env"
+cat "$WORKDIR/$CLOSEDLOOP_STATE_DIR/config.env"

@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 HOOK_PATH = Path(__file__).resolve().parent.parent.parent / "hooks" / "session-end-hook.sh"
+CLOSEDLOOP_STATE_DIR = ".closedloop-ai"
 
 
 def run_session_end(cwd: Path, session_id: str) -> subprocess.CompletedProcess:
@@ -25,7 +26,7 @@ def test_cleans_closedloop_session_mapping(tmp_path: Path) -> None:
     session_id = "cleanup-session"
     cwd = tmp_path / "cwd"
     workdir = tmp_path / "workdir"
-    closedloop_dir = cwd / ".closedloop-ai"
+    closedloop_dir = cwd / CLOSEDLOOP_STATE_DIR
     closedloop_dir.mkdir(parents=True)
     workdir.mkdir(parents=True)
     (closedloop_dir / f"session-{session_id}.workdir").write_text(str(workdir))

@@ -13,6 +13,7 @@ SCRIPT = (
     / "scripts"
     / "check_critic_cache.sh"
 )
+CLOSEDLOOP_STATE_DIR = ".closedloop-ai"
 
 
 def _run(workdir: Path, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -35,9 +36,9 @@ def _hash(plan: str, gates: str | None = None) -> str:
 
 def test_uses_closedloop_ai_critic_gates_in_hash(tmp_path: Path) -> None:
     project_root = tmp_path / "project"
-    workdir = project_root / ".closedloop-ai" / "work"
+    workdir = project_root / CLOSEDLOOP_STATE_DIR / "work"
     reviews_dir = workdir / "reviews"
-    settings_dir = project_root / ".closedloop-ai" / "settings"
+    settings_dir = project_root / CLOSEDLOOP_STATE_DIR / "settings"
     reviews_dir.mkdir(parents=True)
     settings_dir.mkdir(parents=True)
 
@@ -55,9 +56,9 @@ def test_uses_closedloop_ai_critic_gates_in_hash(tmp_path: Path) -> None:
 
 def test_misses_when_closedloop_ai_critic_gates_change(tmp_path: Path) -> None:
     project_root = tmp_path / "project"
-    workdir = project_root / ".closedloop-ai" / "work"
+    workdir = project_root / CLOSEDLOOP_STATE_DIR / "work"
     reviews_dir = workdir / "reviews"
-    settings_dir = project_root / ".closedloop-ai" / "settings"
+    settings_dir = project_root / CLOSEDLOOP_STATE_DIR / "settings"
     reviews_dir.mkdir(parents=True)
     settings_dir.mkdir(parents=True)
 
