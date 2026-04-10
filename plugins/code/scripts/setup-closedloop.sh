@@ -223,7 +223,7 @@ while [[ $CURRENT_PID -gt 1 ]]; do
         break
     fi
     # Get parent PID
-    CURRENT_PID=$(ps -o ppid= -p """""$CURRENT"_"P"I"D" 2>/dev/null | tr -d ' ')
+    CURRENT_PID=$(ps -o ppid= -p "$CURRENT_PID" 2>/dev/null | tr -d ' ')
     if [[ -z "$CURRENT_PID" ]]; then
         break
     fi
@@ -315,7 +315,7 @@ if [[ ${#RESOLVED_ADD_DIRS[@]} -gt 0 ]]; then
     done
     repo_map_joined="$(IFS='|'; echo "${repo_map_parts[*]}")"
 fi
-cat >> "$WORKDIR/.closedloop/config.env" << EOF
+cat >> "$WORKDIR/.closedloop-ai/config.env" << EOF
 CLOSEDLOOP_ADD_DIRS="$add_dirs_joined"
 CLOSEDLOOP_ADD_DIR_NAMES="$add_dir_names_joined"
 CLOSEDLOOP_REPO_MAP="$repo_map_joined"

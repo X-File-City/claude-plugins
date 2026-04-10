@@ -138,8 +138,8 @@ def extra_repo(tmp_path: Path) -> Path:
 
 
 def _config_env(workdir: Path) -> str:
-    """Return the contents of .closedloop/config.env written by the script."""
-    return (workdir / ".closedloop" / "config.env").read_text()
+    """Return the contents of .closedloop-ai/config.env written by the script."""
+    return (workdir / ".closedloop-ai" / "config.env").read_text()
 
 
 def _config_value(config: str, key: str) -> str:
