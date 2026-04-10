@@ -158,7 +158,7 @@ for raw_dir in "${ADD_DIRS[@]}"; do
         echo "Error: --add-dir path does not exist or is not a directory: $raw_dir" >&2
         exit 1
     fi
-    if [[ "$abs_path" == "$WORKDIR" ]]; then
+    if [[ "$abs_path" == "$WORKDIR" || "$WORKDIR" == "$abs_path"/* ]]; then
         continue
     fi
     if array_contains "$abs_path" "${RESOLVED_ADD_DIRS[@]}"; then

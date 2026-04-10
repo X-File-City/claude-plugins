@@ -363,6 +363,23 @@ def test_explicit_prompt_overrides_add_dir_auto_selection(tmp_workdir: Path, ext
     )
 
 
+def test_add_dir_ignores_ancestor_of_workdir(tmp_path: Path) -> None:
+    """An --add-dir that is a parent of workdir must be filtered out."""
+    parent_repo = tmp_path / "parent-repo"
+    parent_repo.mkdir()
+    workdir = parent_repo / CLOSEDLOOP_STATE_DIR / "work"
+    workdir.mkdir(parents=True)
+    (workdir / "prd.md").write_text("# PRD\n")
+
+    result = _run_setup_in_workdir(workdir, "--add-dir", str(parent_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(workdir)
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIRS") == ""
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES") == ""
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == ""
+
+
 def test_no_add_dir_config_env_has_empty_add_dirs(tmp_workdir: Path) -> None:
     """When no --add-dir is given, config.env must contain empty CLOSEDLOOP_ADD_DIRS."""
     result = _run_setup_in_workdir(tmp_workdir)
