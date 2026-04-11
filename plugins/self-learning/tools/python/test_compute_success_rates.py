@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from compute_success_rates import (
+    CLOSEDLOOP_STATE_DIR,
     compute_rates,
     jaccard_similarity,
     match_outcome_to_pattern,
@@ -15,8 +16,6 @@ from compute_success_rates import (
     parse_toon_patterns,
     serialize_toon,
 )
-
-CLOSEDLOOP_STATE_DIR = ".closedloop-ai"
 
 
 @pytest.fixture

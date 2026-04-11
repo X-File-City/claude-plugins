@@ -18,7 +18,7 @@ LEARNINGS_DIR="${1:-$CLOSEDLOOP_STATE_DIR/learnings}"
 
 # Derive PROJECT_DIR for gitignore updates (only if using default path)
 if [[ "$LEARNINGS_DIR" == "$CLOSEDLOOP_STATE_DIR/learnings" ]] || [[ "$LEARNINGS_DIR" == *"/$CLOSEDLOOP_STATE_DIR/learnings" ]]; then
-    PROJECT_DIR="${LEARNINGS_DIR%/.closedloop-ai/learnings}"
+    PROJECT_DIR="${LEARNINGS_DIR%/$CLOSEDLOOP_STATE_DIR/learnings}"
     PROJECT_DIR="${PROJECT_DIR:-.}"
     UPDATE_PROJECT_GITIGNORE=true
 else

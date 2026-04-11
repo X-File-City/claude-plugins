@@ -639,7 +639,7 @@ DESCRIPTION:
   Runs Claude in a loop with fresh context on each iteration. Each iteration
   invokes `claude -p "/code:code <workdir>"`.
 
-  State is persisted to $CLOSEDLOOP_STATE_DIR/closedloop-loop.local.md so loops can be resumed.
+  State is persisted to .closedloop-ai/closedloop-loop.local.md so loops can be resumed.
 
   To signal completion, Claude must output: <promise>COMPLETE</promise>
 
@@ -671,10 +671,10 @@ STOPPING:
 
 MONITORING:
   # View current iteration:
-  grep '^iteration:' $CLOSEDLOOP_STATE_DIR/closedloop-loop.local.md
+  grep '^iteration:' .closedloop-ai/closedloop-loop.local.md
 
   # View progress log:
-  tail -20 $CLOSEDLOOP_STATE_DIR/closedloop-progress.log
+  tail -20 .closedloop-ai/closedloop-progress.log
 
   # View learning system status:
   ls -la .learnings/sessions/

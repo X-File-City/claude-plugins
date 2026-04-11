@@ -68,8 +68,13 @@ if [[ -n "${CLOSEDLOOP_ADD_DIRS:-}" ]]; then
     done
 fi
 
-# Tier 1: Environment variable
+# Determine root-level discovery method. Tier 1 (env_var) wins if present;
+# otherwise Tier 0 (add_dir) wins if it contributed peers; sibling_scan is
+# the default fallback when nothing else produced results.
 DISCOVERY_METHOD="sibling_scan"
+if [[ ${#PEER_JSONS[@]} -gt 0 ]]; then
+    DISCOVERY_METHOD="add_dir"
+fi
 if [[ -n "$CLAUDE_WORKSPACE_REPOS" ]]; then
     DISCOVERY_METHOD="env_var"
     IFS=',' read -ra REPOS <<< "$CLAUDE_WORKSPACE_REPOS"
