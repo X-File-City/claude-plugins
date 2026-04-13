@@ -35,8 +35,10 @@ def test_plan_arg_valid_file(tmp_workdir: Path) -> None:
     result = _run_setup_in_workdir(tmp_workdir, "--plan", str(plan_file))
 
     assert result.returncode == 0
-    assert f"CLOSEDLOOP_PLAN_FILE={str(plan_file)!r}" in result.stdout or \
-        f'CLOSEDLOOP_PLAN_FILE="{plan_file}"' in result.stdout
+    assert (
+        f"CLOSEDLOOP_PLAN_FILE={str(plan_file)!r}" in result.stdout
+        or f'CLOSEDLOOP_PLAN_FILE="{plan_file}"' in result.stdout
+    )
 
 
 def test_plan_arg_nonexistent_file(tmp_workdir: Path) -> None:
@@ -61,16 +63,16 @@ def test_plan_and_prd_mutually_exclusive(tmp_workdir: Path) -> None:
 
 def test_plan_relative_path_resolves_to_absolute(tmp_workdir: Path) -> None:
     """Should resolve a relative --plan path to an absolute path in config output."""
-    result = _run_setup_in_workdir(tmp_workdir, "--plan", "plan.md", cwd=str(tmp_workdir))
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--plan", "plan.md", cwd=str(tmp_workdir)
+    )
 
     assert result.returncode == 0
     # Extract the CLOSEDLOOP_PLAN_FILE value from stdout
     for line in result.stdout.splitlines():
         if line.startswith("CLOSEDLOOP_PLAN_FILE="):
             value = line.split("=", 1)[1].strip('"')
-            assert value.startswith("/"), (
-                f"Expected absolute path, got: {value!r}"
-            )
+            assert value.startswith("/"), f"Expected absolute path, got: {value!r}"
             break
     else:
         pytest.fail("CLOSEDLOOP_PLAN_FILE not found in stdout")
@@ -88,7 +90,11 @@ def test_plan_skips_prd_autodiscovery(tmp_workdir: Path) -> None:
     # PLAN_FILE should be non-empty
     assert "CLOSEDLOOP_PLAN_FILE=" in result.stdout
     plan_line = next(
-        (line for line in result.stdout.splitlines() if line.startswith("CLOSEDLOOP_PLAN_FILE=")),
+        (
+            line
+            for line in result.stdout.splitlines()
+            if line.startswith("CLOSEDLOOP_PLAN_FILE=")
+        ),
         None,
     )
     assert plan_line is not None
@@ -97,7 +103,6 @@ def test_plan_skips_prd_autodiscovery(tmp_workdir: Path) -> None:
 
     # PRD_FILE should be empty (not auto-discovered)
     assert 'CLOSEDLOOP_PRD_FILE=""' in result.stdout
-
 
 
 def test_writes_session_mapping_from_closedloop_pid_file(tmp_workdir: Path) -> None:
@@ -110,7 +115,9 @@ def test_writes_session_mapping_from_closedloop_pid_file(tmp_workdir: Path) -> N
     result = _run_setup_in_workdir(tmp_workdir)
 
     assert result.returncode == 0
-    assert (session_dir / f"session-{session_id}.workdir").read_text().strip() == str(tmp_workdir)
+    assert (session_dir / f"session-{session_id}.workdir").read_text().strip() == str(
+        tmp_workdir
+    )
 
 
 def test_ignores_legacy_pid_mapping(tmp_workdir: Path) -> None:
@@ -123,12 +130,15 @@ def test_ignores_legacy_pid_mapping(tmp_workdir: Path) -> None:
     result = _run_setup_in_workdir(tmp_workdir)
 
     assert result.returncode == 0
-    assert not (tmp_workdir / CLOSEDLOOP_STATE_DIR / f"session-{session_id}.workdir").exists()
+    assert not (
+        tmp_workdir / CLOSEDLOOP_STATE_DIR / f"session-{session_id}.workdir"
+    ).exists()
 
 
 # ---------------------------------------------------------------------------
 # --add-dir tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def extra_repo(tmp_path: Path) -> Path:
@@ -154,13 +164,17 @@ def _config_value(config: str, key: str) -> str:
 
 def test_add_dir_nonexistent_path_fails(tmp_workdir: Path) -> None:
     """Should exit non-zero when --add-dir path does not exist."""
-    result = _run_setup_in_workdir(tmp_workdir, "--add-dir", "/nonexistent/path/does/not/exist")
+    result = _run_setup_in_workdir(
+        tmp_workdir, "--add-dir", "/nonexistent/path/does/not/exist"
+    )
 
     assert result.returncode != 0
     assert "does not exist" in result.stderr or "not a directory" in result.stderr
 
 
-def test_add_dir_writes_closedloop_add_dirs_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
+def test_add_dir_writes_closedloop_add_dirs_to_config(
+    tmp_workdir: Path, extra_repo: Path
+) -> None:
     """config.env must contain CLOSEDLOOP_ADD_DIRS with the resolved absolute path."""
     result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
 
@@ -170,7 +184,9 @@ def test_add_dir_writes_closedloop_add_dirs_to_config(tmp_workdir: Path, extra_r
     assert "CLOSEDLOOP_ADD_DIRS=" in config
 
 
-def test_add_dir_writes_closedloop_repo_map_to_config(tmp_workdir: Path, extra_repo: Path) -> None:
+def test_add_dir_writes_closedloop_repo_map_to_config(
+    tmp_workdir: Path, extra_repo: Path
+) -> None:
     """config.env must contain CLOSEDLOOP_REPO_MAP in name=path format."""
     result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
 
@@ -196,7 +212,9 @@ def test_add_dir_uses_identity_file_name(tmp_workdir: Path, tmp_path: Path) -> N
     assert "my-custom-name" in config
 
 
-def test_multiple_add_dirs_produces_pipe_joined_values(tmp_workdir: Path, tmp_path: Path) -> None:
+def test_multiple_add_dirs_produces_pipe_joined_values(
+    tmp_workdir: Path, tmp_path: Path
+) -> None:
     """Multiple --add-dir flags should produce pipe-separated values in config.env."""
     repo_a = tmp_path / "repo-a"
     repo_b = tmp_path / "repo-b"
@@ -244,7 +262,9 @@ def test_add_dir_ignores_primary_workdir_path(tmp_workdir: Path) -> None:
     assert _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES") == ""
     assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == ""
     prompt_line = next(
-        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
+        line
+        for line in config.splitlines()
+        if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
     )
     assert "prompt-assembled.md" not in prompt_line, (
         "Primary workdir in --add-dir should not trigger multi-repo prompt selection"
@@ -261,8 +281,12 @@ def test_add_dir_makes_identity_name_collisions_unique(
     repo_b.mkdir()
     (repo_a / CLOSEDLOOP_STATE_DIR).mkdir()
     (repo_b / CLOSEDLOOP_STATE_DIR).mkdir()
-    (repo_a / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text('{"name": "service"}')
-    (repo_b / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text('{"name": "service"}')
+    (repo_a / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text(
+        '{"name": "service"}'
+    )
+    (repo_b / CLOSEDLOOP_STATE_DIR / ".repo-identity.json").write_text(
+        '{"name": "service"}'
+    )
 
     result = _run_setup_in_workdir(
         tmp_workdir, "--add-dir", str(repo_a), "--add-dir", str(repo_b)
@@ -318,7 +342,9 @@ def test_add_dir_makes_name_collision_with_primary_repo_unique(
     )
 
 
-def test_add_dir_selects_multi_repo_overlay_automatically(tmp_workdir: Path, extra_repo: Path) -> None:
+def test_add_dir_selects_multi_repo_overlay_automatically(
+    tmp_workdir: Path, extra_repo: Path
+) -> None:
     """When --add-dir is given without explicit --prompt, the multi-repo overlay
     should be assembled onto prompt.md and used as the prompt file."""
     result = _run_setup_in_workdir(tmp_workdir, "--add-dir", str(extra_repo))
@@ -326,7 +352,9 @@ def test_add_dir_selects_multi_repo_overlay_automatically(tmp_workdir: Path, ext
     assert result.returncode == 0, result.stderr
     config = _config_env(tmp_workdir)
     prompt_line = next(
-        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
+        line
+        for line in config.splitlines()
+        if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
     )
     # Should point at an assembled file under the workdir
     assert "prompt-assembled.md" in prompt_line, (
@@ -340,13 +368,17 @@ def test_add_dir_selects_multi_repo_overlay_automatically(tmp_workdir: Path, ext
 
     plugin_root = Path(__file__).resolve().parents[2]
     base = (plugin_root / "prompts" / "prompt.md").read_text()
-    overlay = (plugin_root / "prompts" / "overlays" / "multi-repo.overlay.md").read_text()
+    overlay = (
+        plugin_root / "prompts" / "overlays" / "multi-repo.overlay.md"
+    ).read_text()
     assert assembled == base + "\n\n" + overlay, (
         "Assembled prompt does not match base + blank + overlay"
     )
 
 
-def test_explicit_prompt_overrides_add_dir_auto_selection(tmp_workdir: Path, extra_repo: Path) -> None:
+def test_explicit_prompt_overrides_add_dir_auto_selection(
+    tmp_workdir: Path, extra_repo: Path
+) -> None:
     """An explicit --prompt flag must override the auto-selected multi-repo overlay."""
     result = _run_setup_in_workdir(
         tmp_workdir, "--add-dir", str(extra_repo), "--prompt", "prompt"
@@ -355,7 +387,9 @@ def test_explicit_prompt_overrides_add_dir_auto_selection(tmp_workdir: Path, ext
     assert result.returncode == 0, result.stderr
     config = _config_env(tmp_workdir)
     prompt_line = next(
-        line for line in config.splitlines() if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
+        line
+        for line in config.splitlines()
+        if line.startswith("CLOSEDLOOP_PROMPT_FILE=")
     )
     # Explicit --prompt prompt → direct base file, not assembled
     assert prompt_line.endswith('prompts/prompt.md"'), (
@@ -372,6 +406,27 @@ def test_add_dir_ignores_ancestor_of_workdir(tmp_path: Path) -> None:
     (workdir / "prd.md").write_text("# PRD\n")
 
     result = _run_setup_in_workdir(workdir, "--add-dir", str(parent_repo))
+
+    assert result.returncode == 0, result.stderr
+    config = _config_env(workdir)
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIRS") == ""
+    assert _config_value(config, "CLOSEDLOOP_ADD_DIR_NAMES") == ""
+    assert _config_value(config, "CLOSEDLOOP_REPO_MAP") == ""
+
+
+def test_add_dir_dot_from_repo_root_with_nested_workdir_empty_canonical(
+    tmp_path: Path,
+) -> None:
+    """run-loop style: workdir at repo/.closedloop-ai/work, `--add-dir .` from repo root.
+
+    Canonical secondary repos must be empty: repo root is filtered as ancestor of workdir.
+    """
+    project = tmp_path / "repo"
+    workdir = project / CLOSEDLOOP_STATE_DIR / "work"
+    workdir.mkdir(parents=True)
+    (workdir / "prd.md").write_text("# PRD\n")
+
+    result = _run_setup_in_workdir(workdir, "--add-dir", ".", cwd=str(project))
 
     assert result.returncode == 0, result.stderr
     config = _config_env(workdir)
