@@ -14,12 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Updated agent output path references from `.claude/runs/` to `.closedloop-ai/runs/` in `agent-prompt-generator`
 - Updated bootstrap configuration documentation in `agent-bootstrap.md` to reference `.closedloop-ai/` state directory
 
-### code v1.9.1
+### code v1.9.0
 
 #### Docs
 - Clarified `plugins/code/prompts/overlays/README.md` wording for multi-repo overlay auto-selection — the logic lives in `setup-closedloop.sh`, not `run-loop.sh`
-
-### code v1.9.0
 
 #### Added
 - Multi-repo planning and exploration support via new `--add-dir` flag in `run-loop.sh`, exposing `CLOSEDLOOP_ADD_DIRS` and `CLOSEDLOOP_REPO_MAP` env vars to downstream agents
