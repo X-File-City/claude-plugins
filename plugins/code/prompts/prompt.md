@@ -54,6 +54,7 @@ Use this sequence at any hard-stop that requires user action before continuing:
 
 | content | activeForm |
 |---|---|
+| Phase 0.9: Pre-exploration | Pre-exploring |
 | Phase 1: Planning | Planning |
 | Phase 1.1: Plan review checkpoint | Awaiting plan review decision |
 | Phase 1.2: Process answered questions | Processing answered questions |
@@ -140,8 +141,6 @@ Here are the key phases you must complete:
 
 **PHASE 1.4: CROSS-REPO COORDINATION**
 
-- If `simple_mode` is true, this phase was already marked complete. Skip to Phase 3.
-
 **Phase 1.4.1: Discover peers**
 - Activate `code:cross-repo-cache` skill. On `CACHE_HIT` with `NO_CROSS_REPO_NEEDED`: mark 1.4.x complete, skip to Phase 2.5. On `CAPABILITIES_IDENTIFIED`: skip to 1.4.2.
 - On `CACHE_MISS`: Launch @code:cross-repo-coordinator with `WORKDIR` and `PLAN_PATH=$CLOSEDLOOP_WORKDIR/plan.json`
@@ -160,9 +159,8 @@ Here are the key phases you must complete:
 - Generates PRDs for missing capabilities, updates plan.json with cross-repo tags
 - Proceed to Phase 2.5
 
-**PHASE 2.5: CRITIC VALIDATION** (skipped if simple_mode = true)
+**PHASE 2.5: CRITIC VALIDATION**
 
-- Skip if `simple_mode = true`
 - Activate `code:critic-cache` skill. On `CACHE_HIT`: skip to Phase 2.6. On `CACHE_MISS`: continue.
 - `mkdir -p $CLOSEDLOOP_WORKDIR/reviews`
 - Launch Task() **in parallel** for each critic: "WORKDIR=$CLOSEDLOOP_WORKDIR. Review plan as {critic_name} specialist. Read plan.md, investigation-log.md, PRD. Write to reviews/{critic_name}.review.json with findings: {severity, description, recommendation, affectedTasks}."
@@ -174,9 +172,8 @@ Here are the key phases you must complete:
 - After plan-writer completes, run **PLAN_VALIDATION_SEQUENCE**
 - Proceed to Phase 2.7
 
-**PHASE 2.7: PLAN FINALIZATION** (skipped if simple_mode = true)
+**PHASE 2.7: PLAN FINALIZATION**
 
-- If `simple_mode` is true, skip to Phase 3
 - Launch @code:plan-writer with `WORKDIR`, FINALIZE MODE: enrich task descriptions with implementation details (code patterns, signatures, edge cases). Do NOT add/remove/renumber tasks.
 - After plan-writer completes (outputs `<promise>PLAN_WRITER_COMPLETE</promise>`), run **PLAN_VALIDATION_SEQUENCE**
 - Proceed to Phase 3
@@ -207,12 +204,9 @@ Here are the key phases you must complete:
 
 **PHASE 5: TESTING AND VALIDATION**
 
-
 **Step 1: Write tests for implemented code**
-- If code was implemented in Phase 3, launch @test-engineer with prompt:
-  "WORKDIR=$CLOSEDLOOP_WORKDIR. Write tests for the code changes made in this session. Focus on the implemented tasks from the plan."
-- The test-engineer will identify testable code and write appropriate unit/integration tests
-- Skip this step only if: (a) no code was implemented, or (b) the project has no test framework
+- If code was implemented in Phase 3, launch @test-engineer with `WORKDIR=$CLOSEDLOOP_WORKDIR` to write tests for the changes
+- Skip if no code was implemented or the project has no test framework
 
 **Step 2: Run validation via build-validator agent:**
 1. Launch @code:build-validator with `WORKDIR=$CLOSEDLOOP_WORKDIR`
@@ -243,11 +237,8 @@ Here are the key phases you must complete:
    - If `BUILD_CACHE_MISS`: Launch @code:build-validator with `WORKDIR=$CLOSEDLOOP_WORKDIR`
    - If `VALIDATION_FAILED`:
      1. Log "Final build validation failed. Loop will continue."
-     2. Update state.json:
-        ```bash
-        echo '{"phase": "Phase 7: Logging and completion", "status": "IN_PROGRESS", "reason": "Final build validation failed", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > $CLOSEDLOOP_WORKDIR/state.json
-        ```
-     3. **Do NOT output `<promise>COMPLETE</promise>`** - end naturally, loop will restart
+     2. Update state.json with `"reason": "Final build validation failed"` (base schema + reason)
+     3. **Do NOT output `<promise>COMPLETE</promise>`** — end naturally, loop will restart
    - If `VALIDATION_PASSED` or `NO_VALIDATION`: Continue to step 2
 
 2. **Task and question check:** Activate `code:plan-validate` skill (runs Python script against $CLOSEDLOOP_WORKDIR) — semantic check is unnecessary since plan content hasn't changed since last semantic validation
@@ -257,12 +248,8 @@ Here are the key phases you must complete:
 
 - **If `pending_tasks` is NOT empty (work remains):**
   1. Log: "Pending tasks remain: [task IDs]. Loop will continue."
-  2. Update state.json:
-     ```bash
-     echo '{"phase": "Phase 7: Logging and completion", "status": "IN_PROGRESS", "reason": "Pending tasks remain", "pendingTasks": ["T-X.Y", ...], "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > $CLOSEDLOOP_WORKDIR/state.json
-     ```
-  3. **Do NOT output `<promise>COMPLETE</promise>`** - just end your response naturally
-  4. The external loop will automatically restart a fresh iteration
+  2. Update state.json with `"reason": "Pending tasks remain"` and `"pendingTasks": [...]` (base schema + fields)
+  3. **Do NOT output `<promise>COMPLETE</promise>`** — end naturally, loop will restart
 
 - **If all clear:** Write state.json with `"status": "COMPLETED"`, THEN output `<promise>COMPLETE</promise>`. Never output the promise without writing state.json first.
 
