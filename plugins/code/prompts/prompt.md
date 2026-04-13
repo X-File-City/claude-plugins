@@ -50,7 +50,27 @@ Use this sequence at any hard-stop that requires user action before continuing:
 
 ## Required TodoWrite
 
-**MANDATORY first action:** Create a TodoWrite entry for each phase below (0.9, 1, 1.1, 1.2, 1.2a, 1.3, 1.4, 1.4.1, 1.4.2, 1.4.3, 2.5, 2.6, 2.7, 3, 4, 5, 6, 7), all `pending`. Mark `in_progress` when starting, `completed` when done.
+**MANDATORY first action:** Create a TodoWrite entry for each phase, all `pending`. Use the content and activeForm below. Mark `in_progress` when starting, `completed` when done.
+
+| content | activeForm |
+|---|---|
+| Phase 1: Planning | Planning |
+| Phase 1.1: Plan review checkpoint | Awaiting plan review decision |
+| Phase 1.2: Process answered questions | Processing answered questions |
+| Phase 1.2a: Process addressed gaps | Processing addressed gaps |
+| Phase 1.3: Simple mode evaluation | Evaluating plan complexity |
+| Phase 1.4: Cross-repo coordination | Coordinating cross-repo |
+| Phase 1.4.1: Discover peers | Discovering peers |
+| Phase 1.4.2: Verify capabilities | Verifying capabilities |
+| Phase 1.4.3: Generate PRDs | Generating cross-repo PRDs |
+| Phase 2.5: Critic validation | Running critic reviews |
+| Phase 2.6: Plan refinement | Merging critic feedback |
+| Phase 2.7: Plan finalization | Finalizing plan |
+| Phase 3: Implementation | Implementing |
+| Phase 4: Code simplification | Simplifying code |
+| Phase 5: Testing and Validation | Testing |
+| Phase 6: Visual inspection | Inspecting visuals |
+| Phase 7: Logging and completion | Completing |
 
 ## State Tracking
 
