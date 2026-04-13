@@ -59,7 +59,7 @@ Parse the JSON output to get:
 
 **Write the discovery result to `$CLOSEDLOOP_WORKDIR/.workspace-repos.json`** so other agents can access it.
 
-### Step 1.5: Local Repos (--add-dir)
+### Step 1.1: Local Repos (--add-dir)
 
 After running `discover-repos.sh`, check `CLOSEDLOOP_ADD_DIRS` from the environment. This variable contains pipe-separated paths passed via `--add-dir` flags, representing local repositories that are already part of the current task plan. Example: `CLOSEDLOOP_ADD_DIRS="/path/to/a|/path/to/b"`.
 
