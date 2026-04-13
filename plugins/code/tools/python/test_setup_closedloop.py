@@ -12,9 +12,16 @@ SETUP_SCRIPT = Path(__file__).parent.parent.parent / "scripts" / "setup-closedlo
 
 @pytest.fixture
 def tmp_workdir(tmp_path: Path) -> Path:
-    """Write a plan.md file to tmp_path and return it."""
-    (tmp_path / "plan.md").write_text("# Plan\n\nTask T-1.1: Do something\n")
-    return tmp_path
+    """Create a workdir subdirectory inside tmp_path and return it.
+
+    Using a subdirectory (not tmp_path itself) keeps sibling directories like
+    extra-repo outside the workdir tree, which matters for the subdirectory
+    containment check in setup-closedloop.sh.
+    """
+    workdir = tmp_path / "workdir"
+    workdir.mkdir()
+    (workdir / "plan.md").write_text("# Plan\n\nTask T-1.1: Do something\n")
+    return workdir
 
 
 def _run_setup_in_workdir(

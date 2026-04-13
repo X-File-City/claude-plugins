@@ -632,6 +632,7 @@ OPTIONS:
   --prompt <name>                Orchestrator prompt name from prompts/ folder (default: prompt)
   --max-iterations <n>           Maximum iterations (default: 50)
   --completion-promise '<text>'  Promise phrase to signal completion (default: COMPLETE)
+  --add-dir <path>               Add a secondary repository for multi-repo planning (repeatable)
   --self-learning                Enable self-learning (disabled by default)
   -h, --help                     Show this help message
 
@@ -881,7 +882,7 @@ create_state_file() {
     prompt="$prompt --prd $PRD_FILE"
   fi
   for add_dir in "${ADD_DIRS[@]+"${ADD_DIRS[@]}"}"; do
-    prompt="$prompt --add-dir $add_dir"
+    prompt="$prompt --add-dir \"$add_dir\""
   done
 
   cat > "$STATE_FILE" <<EOF
