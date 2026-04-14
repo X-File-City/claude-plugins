@@ -113,6 +113,7 @@ TIER0_SCENARIOS: list[dict] = [
         "expect": {
             "extra": {
                 "discoveryMethod": "add_dir",
+                "local": True,
                 "name": "extra-svc",
                 "type": "service",
             }
@@ -150,7 +151,7 @@ TIER0_SCENARIOS: list[dict] = [
             },
         },
         "add_dirs": ["sibling-svc"],
-        "expect": {"sibling-svc": {"discoveryMethod": "add_dir"}},
+        "expect": {"sibling-svc": {"discoveryMethod": "add_dir", "local": True}},
     },
 ]
 

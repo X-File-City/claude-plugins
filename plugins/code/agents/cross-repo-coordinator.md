@@ -59,18 +59,13 @@ Parse the JSON output to get:
 
 **Write the discovery result to `$CLOSEDLOOP_WORKDIR/.workspace-repos.json`** so other agents can access it.
 
-### Step 1.1: Local Repos (--add-dir)
+### Step 1.1: Preserve Local Peer Markers
 
-After running `discover-repos.sh`, check `CLOSEDLOOP_ADD_DIRS` from the environment. This variable contains pipe-separated paths passed via `--add-dir` flags, representing local repositories that are already part of the current task plan. Example: `CLOSEDLOOP_ADD_DIRS="/path/to/a|/path/to/b"`.
+`discover-repos.sh` marks `--add-dir` peers with `"local": true` in the `peers[]` output.
 
-For each path in `CLOSEDLOOP_ADD_DIRS`:
-1. Normalize the path (resolve symlinks, trailing slashes)
-2. Find the matching entry in the `peers[]` array from the discovery output by comparing the `path` field
-3. If a match is found, mark that peer with `"local": true` in the entry written to `.cross-repo-needs.json`
-
-**Local repos must NOT generate cross-repo PRDs** — they already have tasks in the plan. When writing capabilities for a local peer, set `"local": true` and skip PRD generation for that peer in the downstream workflow.
-
-External repos (peers NOT found in `CLOSEDLOOP_ADD_DIRS`) continue through the existing PRD-generation workflow unchanged.
+When writing `.cross-repo-needs.json`:
+1. If a peer entry from `discover-repos.sh` has `"local": true`, preserve that value on the corresponding need entry
+2. Otherwise, write `"local": false`
 
 ### Step 2: Handle No Peers Case
 
