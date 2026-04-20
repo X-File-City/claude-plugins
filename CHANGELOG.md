@@ -6,10 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### code v1.9.3
+
+#### Changed
+- Migrated subagent resumption pattern from Task-based re-launch to SendMessage continuation across orchestrator prompt, `visual-qa-subagent` agent, `iterative-retrieval` skill, and `/code` command allowed-tools list
+- Orchestrator Phase 6 INCOMPLETE_DOCS and BLOCKED handlers now store `agent_id` from initial Task spawn and continue via `SendMessage(to=<agent_id>)` instead of launching fresh Task instances
+- Added async wait rule requiring orchestrator to wait for `<task-notification>` before proceeding after SendMessage dispatch
+- `run-loop.sh` now pins `--model claude-opus-4-6` and `--effort high` on the per-iteration `claude` invocation
+
+### code-review v1.5.2
+
+#### Fixed
+- Fixed `test_github_mode` test isolation to prevent `CR_GLOBAL_CACHE` environment variable from leaking into test assertions
+
 ### code v1.9.2
 
 #### Changed
-- `run-loop.sh` and `debate-loop.sh` now consume the `CLAUDE_BIN` environment variable when set, falling back to bare `claude` otherwise. Complements closedloop-electron PR #111 so the Electron desktop app's pre-validated claude binary path is actually used by every subprocess invocation — fixes silent failures for users whose `claude` is installed outside `/opt/homebrew/bin` (non-Homebrew macOS setups, manual symlinks, etc.)
+- `run-loop.sh` and `debate-loop.sh` now consume the `CLAUDE_BIN` environment variable when set, falling back to bare `claude` otherwise. Complements closedloop-electron PR #111 so the Electron desktop app's pre-validated claude binary path is actually used by every subprocess invocation -- fixes silent failures for users whose `claude` is installed outside `/opt/homebrew/bin` (non-Homebrew macOS setups, manual symlinks, etc.)
 - `debate-loop.sh` dependency check verifies the resolved `$CLAUDE` path rather than a bare `claude` lookup, so custom binary locations are correctly validated at startup
 
 ### code v1.9.1
