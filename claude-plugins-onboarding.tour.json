@@ -1,0 +1,214 @@
+{
+  "id": "claude-plugins-onboarding",
+  "title": "ClosedLoop Claude Plugins Tour",
+  "description": "Guided walkthrough of the ClosedLoop Claude Code plugins monorepo — six plugins, the orchestration loop, lifecycle hooks, and the self-learning pattern store.",
+  "version": "1.0.0",
+  "audience": "New Contributors",
+  "prerequisites": [
+    "Familiarity with Claude Code",
+    "Basic Python and Bash knowledge"
+  ],
+  "steps": [
+    {
+      "id": "step-1-overview",
+      "title": "Repository Overview",
+      "description": "Welcome to a monorepo of six open-source Claude Code plugins by ClosedLoop. Each plugin follows a consistent layout — agents, commands, skills, hooks, and Python tools — so once you know one, you know them all.",
+      "estimatedTime": 60,
+      "focusDirectory": "",
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-2-plugins-directory",
+      "title": "The Six Plugins",
+      "description": "Six plugins, each with a focused role. Code is the hub that orchestrates work. Judges and code review validate output. Self-learning captures patterns across sessions. Bootstrap initializes new repos. Platform provides standalone tooling.",
+      "estimatedTime": 90,
+      "focusDirectory": "plugins",
+      "highlightLayers": [
+        {
+          "id": "plugin-dirs",
+          "name": "Plugin Directories",
+          "color": "#3b82f6",
+          "items": [
+            { "path": "plugins/code", "type": "directory" },
+            { "path": "plugins/judges", "type": "directory" },
+            { "path": "plugins/code-review", "type": "directory" },
+            { "path": "plugins/self-learning", "type": "directory" },
+            { "path": "plugins/bootstrap", "type": "directory" },
+            { "path": "plugins/platform", "type": "directory" }
+          ],
+          "opacity": 0.75,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-3-code-hub",
+      "title": "The Code Plugin — The Hub",
+      "description": "The code plugin orchestrates everything. It bundles a fleet of specialist subagents — planners, implementers, validators, reviewers, and pattern capturers — alongside commands, skills, and prompts that drive the closed-loop workflow.",
+      "estimatedTime": 120,
+      "focusDirectory": "plugins/code",
+      "highlightLayers": [
+        {
+          "id": "code-core",
+          "name": "Core Pieces",
+          "color": "#10b981",
+          "items": [
+            { "path": "plugins/code/agents", "type": "directory" },
+            { "path": "plugins/code/commands", "type": "directory" },
+            { "path": "plugins/code/skills", "type": "directory" },
+            { "path": "plugins/code/prompts", "type": "directory" }
+          ],
+          "opacity": 0.75,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-4-run-loop",
+      "title": "Closed Loop Orchestration",
+      "description": "The orchestration loop drives fresh-context Claude iterations — every cycle starts with a clean window. An orchestrator prompt coordinates eight workflow phases by delegating to subagents. When each iteration finishes, an eleven-step pipeline runs Python tools from the self-learning plugin to record outcomes.",
+      "estimatedTime": 120,
+      "focusDirectory": "plugins/code/scripts",
+      "highlightLayers": [
+        {
+          "id": "loop-files",
+          "name": "Loop Orchestration",
+          "color": "#f59e0b",
+          "items": [
+            { "path": "plugins/code/scripts/run-loop.sh", "type": "file" },
+            { "path": "plugins/code/scripts/setup-loop.sh", "type": "file" },
+            { "path": "plugins/code/scripts/setup-closedloop.sh", "type": "file" },
+            { "path": "plugins/code/scripts/discover-repos.sh", "type": "file" },
+            { "path": "plugins/code/scripts/loop-agents.json", "type": "file" }
+          ],
+          "opacity": 0.8,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-5-hooks",
+      "title": "Lifecycle Hooks",
+      "description": "Hooks fire on five lifecycle events covering session start and end, subagent start and stop, and just before tools run. The subagent-start hook injects environment variables and relevant learning patterns. The pre-tool-use hook fires when reads, edits, writes, or shell commands are about to run, surfacing patterns at exactly the right moment.",
+      "estimatedTime": 90,
+      "focusDirectory": "plugins/code/hooks",
+      "highlightLayers": [
+        {
+          "id": "hook-files",
+          "name": "Hook Scripts",
+          "color": "#8b5cf6",
+          "items": [
+            { "path": "plugins/code/hooks/hooks.json", "type": "file" },
+            { "path": "plugins/code/hooks/session-start-hook.sh", "type": "file" },
+            { "path": "plugins/code/hooks/subagent-start-hook.sh", "type": "file" },
+            { "path": "plugins/code/hooks/subagent-stop-hook.sh", "type": "file" },
+            { "path": "plugins/code/hooks/pretooluse-hook.sh", "type": "file" }
+          ],
+          "opacity": 0.8,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-6-self-learning",
+      "title": "Self-Learning Pattern Store",
+      "description": "The self-learning plugin captures and recalls patterns across sessions using TOON, a compact format that cuts roughly forty percent of the tokens compared to JSON. Python tools analyze outcomes while skills coordinate pattern matching and quality scoring.",
+      "estimatedTime": 90,
+      "focusDirectory": "plugins/self-learning",
+      "highlightLayers": [
+        {
+          "id": "learning-pieces",
+          "name": "Learning System",
+          "color": "#ec4899",
+          "items": [
+            { "path": "plugins/self-learning/tools", "type": "directory" },
+            { "path": "plugins/self-learning/skills", "type": "directory" },
+            { "path": "plugins/self-learning/scripts", "type": "directory" },
+            { "path": "plugins/self-learning/schemas", "type": "directory" }
+          ],
+          "opacity": 0.75,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-7-quality-plugins",
+      "title": "Quality: Judges & Code Review",
+      "description": "Judges provides plan-evaluator agents and schemas for grading work. Code review adds review commands, prompts, and supporting tooling. Both are invoked by the orchestrator during validation phases.",
+      "estimatedTime": 90,
+      "focusDirectory": "plugins",
+      "highlightLayers": [
+        {
+          "id": "quality-plugins",
+          "name": "Quality Plugins",
+          "color": "#ef4444",
+          "items": [
+            { "path": "plugins/judges", "type": "directory" },
+            { "path": "plugins/code-review", "type": "directory" }
+          ],
+          "opacity": 0.75,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-8-docs-and-config",
+      "title": "Documentation & Configuration",
+      "description": "Top-level docs explain how the pieces fit together. The project guide is the canonical reference for Claude. The contributing guide spells out the conventional commit format and the required version bumps. The docs folder maps inter-plugin relationships.",
+      "estimatedTime": 60,
+      "focusDirectory": "",
+      "highlightLayers": [
+        {
+          "id": "docs-files",
+          "name": "Key Docs",
+          "color": "#06b6d4",
+          "items": [
+            { "path": "CLAUDE.md", "type": "file" },
+            { "path": "README.md", "type": "file" },
+            { "path": "CONTRIBUTING.md", "type": "file" },
+            { "path": "AGENTS.md", "type": "file" },
+            { "path": "CHANGELOG.md", "type": "file" },
+            { "path": "docs", "type": "directory" },
+            { "path": "pyproject.toml", "type": "file" },
+            { "path": ".claude-plugin", "type": "directory" }
+          ],
+          "opacity": 0.75,
+          "renderStrategy": "border"
+        }
+      ],
+      "colorMode": "fileTypes"
+    },
+    {
+      "id": "step-9-recent-changes",
+      "title": "Recent Activity",
+      "description": "Switch to git color mode to see recently modified files across the repo. This is useful for spotting active work areas and picking up where the last contributor left off.",
+      "estimatedTime": 60,
+      "focusDirectory": "",
+      "colorMode": "git"
+    },
+    {
+      "id": "step-10-next-steps",
+      "title": "Next Steps",
+      "description": "You now know the layout — six plugins, code as the hub, an orchestration loop, lifecycle hooks, and a pattern store that learns over time. Skim the project guide and contributing guide before making changes; every plugin edit requires a version bump in that plugin's manifest.",
+      "estimatedTime": 30,
+      "focusDirectory": "",
+      "colorMode": "fileTypes"
+    }
+  ],
+  "metadata": {
+    "author": "ClosedLoop",
+    "createdAt": "2026-04-27T00:00:00.000Z",
+    "tags": [
+      "onboarding",
+      "monorepo",
+      "claude-code",
+      "plugins"
+    ]
+  }
+}
